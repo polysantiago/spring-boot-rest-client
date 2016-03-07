@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -80,6 +81,11 @@ class RestClientInterceptor implements MethodInterceptor {
             return restTemplate.exchange(requestEntity, method.getReturnType()).getBody();
         } catch (HttpStatusCodeException ex) {
             HttpStatus statusCode = ex.getStatusCode();
+
+            if (isOptional(method) && statusCode.equals(HttpStatus.NOT_FOUND)) {
+                return Optional.empty();
+            }
+
             if (retryEnabled && anyMatch(specification.getRetryableStatuses(), statusCode::equals)) {
                 throw new RetryableException(ex);
             }
@@ -90,6 +96,10 @@ class RestClientInterceptor implements MethodInterceptor {
             }
             throw ex;
         }
+    }
+
+    private static boolean isOptional(Method method) {
+        return method.getReturnType().isAssignableFrom(Optional.class);
     }
 
     private static <T> boolean anyMatch(T[] array, Predicate<T> predicate) {

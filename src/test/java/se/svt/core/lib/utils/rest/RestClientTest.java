@@ -24,6 +24,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -89,6 +90,12 @@ public class RestClientTest {
 
         @RequestMapping(method = RequestMethod.DELETE)
         Void barDelete(String body);
+
+        @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+        Optional<Foo> tryNonEmptyOptional();
+
+        @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+        Optional<String> tryEmptyOptional();
 
     }
 
@@ -235,5 +242,28 @@ public class RestClientTest {
         fooClient.defaultFoo();
     }
 
+    @Test
+    public void testRestClientWithNonEmptyOptional() throws Exception {
+        Foo foo = new Foo("bar");
 
+        server.expect(requestTo("http://localhost/"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
+
+        Optional<Foo> optional = fooClient.tryNonEmptyOptional();
+
+        assertThat(optional.isPresent(), is(true));
+        assertThat(optional.get(), is(foo));
+    }
+
+    @Test
+    public void testRestClientWithEmptyOptional() throws Exception {
+        server.expect(requestTo("http://localhost/"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        Optional<String> optional = fooClient.tryEmptyOptional();
+
+        assertThat(optional.isPresent(), is(false));
+    }
 }

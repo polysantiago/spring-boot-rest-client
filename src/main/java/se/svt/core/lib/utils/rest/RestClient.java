@@ -4,6 +4,7 @@ package se.svt.core.lib.utils.rest;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.http.HttpStatus;
 
+import java.io.IOException;
 import java.lang.annotation.*;
 
 @Target(ElementType.TYPE)
@@ -24,8 +25,8 @@ public @interface RestClient {
      */
     String url() default "";
 
-    HttpStatus[] retryOn() default {};
+    HttpStatus[] retryOn() default {HttpStatus.SERVICE_UNAVAILABLE};
 
-    Class<? extends Exception>[] retryOnException() default {};
+    Class<? extends Exception>[] retryOnException() default {IOException.class};
 
 }

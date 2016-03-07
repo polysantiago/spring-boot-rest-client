@@ -26,7 +26,7 @@ apply plugin: 'propdeps'
 apply plugin: 'propdeps-maven'
 apply plugin: 'propdeps-idea'
 
-group = "se.svt.core.libs.utils.rest"
+group = "se.svt.core.lib.utils.rest"
 description = "Core Systems - Rest Client"
 version = '0.0.1-SNAPSHOT'
 
@@ -72,6 +72,8 @@ dependencies {
 
     optional('org.springframework.boot:spring-boot-configuration-processor')
     optional('org.springframework.retry:spring-retry')
+
+    optional('com.fasterxml.jackson.datatype:jackson-datatype-jdk8')
 
     // tag::utils[]
     compile('com.google.guava:guava:19.0')
