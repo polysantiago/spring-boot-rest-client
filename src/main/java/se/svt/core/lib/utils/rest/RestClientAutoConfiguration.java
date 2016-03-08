@@ -25,7 +25,7 @@ import static java.util.stream.Collectors.toList;
 @Configuration
 @EnableConfigurationProperties(RestClientProperties.class)
 @AutoConfigureAfter(WebMvcAutoConfiguration.class)
-public class RestClientAutoconfiguration {
+public class RestClientAutoConfiguration {
 
     @Autowired(required = false)
     private List<RestClientSpecification> specifications;

@@ -4,11 +4,6 @@ svt:
       localhost: http://localhost
     retry:
       max-attempts: 2
-      back-off:
-        delay: 1000
-        max-delay: 0
-        multiplier: 0
-        random: false
 
 localhost:
   uri: http://localhost

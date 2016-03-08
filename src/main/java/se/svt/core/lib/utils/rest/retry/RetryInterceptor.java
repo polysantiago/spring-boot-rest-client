@@ -1,16 +1,20 @@
 package se.svt.core.lib.utils.rest.retry;
 
 import com.google.common.collect.ImmutableMap;
-import lombok.RequiredArgsConstructor;
 import org.springframework.retry.backoff.*;
 import org.springframework.retry.interceptor.RetryInterceptorBuilder;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 
-@RequiredArgsConstructor
+import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
+
 public class RetryInterceptor {
 
     private final RetrySettings retrySettings;
+
+    public RetryInterceptor(RetrySettings retrySettings) {
+        this.retrySettings = defaultIfNull(retrySettings, new RetrySettings());
+    }
 
     public RetryOperationsInterceptor buildInterceptor() {
         return RetryInterceptorBuilder.stateless()

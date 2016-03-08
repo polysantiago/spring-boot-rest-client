@@ -44,7 +44,7 @@ public class RestClientRetryTest {
 
     @Configuration
     @EnableAutoConfiguration
-    @EnableRestClients
+    @EnableRestClients(basePackageClasses = FooClient.class)
     @EnableRetry
     protected static class TestConfiguration {
 

@@ -15,7 +15,7 @@ public class RestClientProperties {
 
     public static final String PREFIX = "svt.rest-client";
 
-    private RetrySettings retry;
+    private RetrySettings retry = new RetrySettings();
     private Map<String, Object> services = newHashMap();
 
 }

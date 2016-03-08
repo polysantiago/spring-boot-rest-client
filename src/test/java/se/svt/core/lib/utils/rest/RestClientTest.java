@@ -1,6 +1,7 @@
 package se.svt.core.lib.utils.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,7 +52,7 @@ public class RestClientTest {
 
     @Configuration
     @EnableAutoConfiguration
-    @EnableRestClients
+    @EnableRestClients(basePackageClasses = FooClient.class)
     protected static class TestConfiguration {
 
     }
@@ -96,6 +98,9 @@ public class RestClientTest {
 
         @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
         Optional<String> tryEmptyOptional();
+
+        @RequestMapping(produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+        byte[] raw();
 
     }
 
@@ -265,5 +270,16 @@ public class RestClientTest {
         Optional<String> optional = fooClient.tryEmptyOptional();
 
         assertThat(optional.isPresent(), is(false));
+    }
+
+    @Test
+    public void testRestClientWithRawData() throws Exception {
+        server.expect(requestTo("http://localhost/"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess("success".getBytes(), MediaType.APPLICATION_OCTET_STREAM));
+
+        byte[] raw = fooClient.raw();
+
+        assertThat(StringUtils.toEncodedString(raw, Charset.defaultCharset()), is("success"));
     }
 }

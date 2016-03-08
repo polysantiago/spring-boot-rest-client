@@ -6,6 +6,6 @@ import lombok.Data;
 public class RetrySettings {
 
     private int maxAttempts = 3;
-    private BackOffSettings backOff;
+    private BackOffSettings backOff = new BackOffSettings();
 
 }

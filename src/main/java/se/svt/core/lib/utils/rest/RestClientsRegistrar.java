@@ -1,5 +1,6 @@
 package se.svt.core.lib.utils.rest;
 
+import com.google.common.collect.ImmutableSet;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -25,6 +26,7 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -33,8 +35,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Stream;
 
 import static com.google.common.collect.Sets.newHashSet;
+import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.springframework.util.Assert.state;
 import static org.springframework.util.StringUtils.hasText;
@@ -50,7 +54,7 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
         ClassPathScanningCandidateComponentProvider scanner = getScanner();
         scanner.setResourceLoader(this.resourceLoader);
 
-        Set<String> basePackages = new HashSet<>();
+        Set<String> basePackages;
         Map<String, Object> annotationAttributes = metadata.getAnnotationAttributes(EnableRestClients.class.getName());
         AnnotationTypeFilter annotationTypeFilter = new AnnotationTypeFilter(RestClient.class);
 
@@ -58,7 +62,7 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
 
         if (isEmpty(clients)) {
             scanner.addIncludeFilter(annotationTypeFilter);
-            basePackages.add(ClassUtils.getPackageName(metadata.getClassName()));
+            basePackages = getBasePackages(metadata);
         } else {
             final Set<String> clientClasses = newHashSet();
             basePackages = new HashSet<>();
@@ -93,6 +97,21 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
                     registerRestClient(beanDefinitionRegistry, annotationMetadata, attributes);
                 });
         }
+    }
+
+    protected Set<String> getBasePackages(AnnotationMetadata metadata) {
+        Map<String, Object> attributes = metadata.getAnnotationAttributes(EnableRestClients.class.getCanonicalName());
+
+        Set<String> basePackages = ImmutableSet.<String>builder()
+            .addAll(Stream.of((String[]) attributes.get("value")).filter(StringUtils::hasText).collect(toList()))
+            .addAll(Stream.of((String[]) attributes.get("basePackages")).filter(StringUtils::hasText).collect(toList()))
+            .addAll(Stream.of((Class[]) attributes.get("basePackageClasses")).map(ClassUtils::getPackageName).collect(toList()))
+            .build();
+
+        if (basePackages.isEmpty()) {
+            return ImmutableSet.of(ClassUtils.getPackageName(metadata.getClassName()));
+        }
+        return basePackages;
     }
 
     protected ClassPathScanningCandidateComponentProvider getScanner() {
