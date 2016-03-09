@@ -11,16 +11,11 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.RequestEntity;
+import org.springframework.http.*;
+import org.springframework.http.RequestEntity.BodyBuilder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -36,6 +31,8 @@ import java.util.stream.Stream;
 import static com.google.common.base.Throwables.getRootCause;
 import static java.util.stream.Collectors.toMap;
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.substringAfter;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.springframework.http.MediaType.parseMediaType;
 
 @RequiredArgsConstructor
@@ -66,19 +63,31 @@ class RestClientInterceptor implements MethodInterceptor {
             .path(isNotEmpty(request.value()) ? request.value()[0] : DEFAULT_PATH)
             .queryParams(getQueryParameters(parameters, arguments))
             .buildAndExpand(getPathParameters(parameters, arguments))
+            .encode()
             .toUri();
 
-        RequestEntity<Object> requestEntity = RequestEntity
+        // Request
+        BodyBuilder builder = RequestEntity
             .method(toHttpMethod(isNotEmpty(request.method()) ? request.method()[0] : RequestMethod.GET), uri)
             .accept(produces(request.produces()))
-            .contentType(contentType(request.consumes()))
-            .body(body(parameters, arguments));
+            .contentType(contentType(request.consumes()));
 
+        // Extra headers
+        if (isNotEmpty(request.headers())) {
+            requestHeaders(request.headers(), builder);
+        }
+        paramHeaders(parameters, arguments, builder);
+
+        RequestEntity<Object> requestEntity = builder.body(body(parameters, arguments));
+
+        ResponseEntity<?> responseEntity;
         try {
             if (method.getGenericReturnType() instanceof ParameterizedType) {
-                return restTemplate.exchange(requestEntity, new SyntheticParameterizedTypeReference<>(method)).getBody();
+                responseEntity = restTemplate.exchange(requestEntity, new SyntheticParameterizedTypeReference<>(method));
+            } else {
+                responseEntity = restTemplate.exchange(requestEntity, method.getReturnType());
             }
-            return restTemplate.exchange(requestEntity, method.getReturnType()).getBody();
+            return Optional.ofNullable(responseEntity).map(ResponseEntity::getBody).orElse(null);
         } catch (HttpStatusCodeException ex) {
             HttpStatus statusCode = ex.getStatusCode();
 
@@ -149,5 +158,22 @@ class RestClientInterceptor implements MethodInterceptor {
                 .findAny().orElse(null);
         }
         return null;
+    }
+
+    private static void requestHeaders(String[] headers, BodyBuilder builder) {
+        Stream.of(headers)
+            .forEach(header -> builder.header(substringBefore(header, ":"), substringAfter(header, ":")));
+    }
+
+    private static void paramHeaders(List<MethodParameter> parameters, Object[] arguments, BodyBuilder builder) {
+        if (CollectionUtils.isNotEmpty(parameters)) {
+            parameters.stream()
+                .filter(parameter -> parameter.hasParameterAnnotation(RequestHeader.class))
+                .forEach(
+                    parameter ->
+                        builder.header(
+                            ((RequestHeader) parameter.getParameterAnnotations()[0]).value(),
+                            arguments[parameter.getParameterIndex()].toString()));
+        }
     }
 }

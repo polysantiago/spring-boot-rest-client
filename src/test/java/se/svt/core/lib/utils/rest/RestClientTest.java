@@ -10,16 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -101,6 +99,9 @@ public class RestClientTest {
 
         @RequestMapping(produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
         byte[] raw();
+
+        @RequestMapping(headers = "Some-Header:some-value")
+        Void fooWithHeaders(@RequestHeader("User-Id") String userId, @RequestHeader("Password") String password);
 
     }
 
@@ -184,7 +185,7 @@ public class RestClientTest {
     public void testRestClientGetAcceptHeader() throws Exception {
         server.expect(requestTo("http://localhost/some-id"))
             .andExpect(method(HttpMethod.GET))
-            .andExpect(header("Accept", "application/json"))
+            .andExpect(header(HttpHeaders.ACCEPT, "application/json"))
             .andRespond(withSuccess());
 
         fooClient.getFooWithAcceptHeader("some-id");
@@ -205,7 +206,7 @@ public class RestClientTest {
 
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.POST))
-            .andExpect(header("Content-Type", "application/json"))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
             .andRespond(withCreatedEntity(URI.create("http://some-url")));
 
         fooClient.barWithContentType(foo);
@@ -281,5 +282,17 @@ public class RestClientTest {
         byte[] raw = fooClient.raw();
 
         assertThat(StringUtils.toEncodedString(raw, Charset.defaultCharset()), is("success"));
+    }
+
+    @Test
+    public void testRestClientWithHeaders() throws Exception {
+        server.expect(requestTo("http://localhost/"))
+            .andExpect(method(HttpMethod.GET))
+            .andExpect(header("Some-Header", "some-value"))
+            .andExpect(header("User-Id", "userId"))
+            .andExpect(header("Password", "password"))
+            .andRespond(withSuccess());
+
+        fooClient.fooWithHeaders("userId", "password");
     }
 }

@@ -33,32 +33,21 @@ public class RestClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public RestTemplate restTemplate() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new Jdk8Module());
+
+        MappingJackson2HttpMessageConverter jacksonConverter = new MappingJackson2HttpMessageConverter();
+        jacksonConverter.setObjectMapper(objectMapper);
+
         final RestTemplate restTemplate = new RestTemplate();
 
         //find and replace Jackson message converter with our own
         List<HttpMessageConverter<?>> messageConverters = restTemplate.getMessageConverters().stream()
             .filter(converter -> !(converter instanceof MappingJackson2HttpMessageConverter))
             .collect(toList());
-
-        messageConverters.add(mappingJackson2HttpMessageConverter());
+        messageConverters.add(jacksonConverter);
 
         return new RestTemplate(messageConverters);
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
-        MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-        converter.setObjectMapper(objectMapper());
-        return converter;
-    }
-
-    @Bean
-    @ConditionalOnMissingBean
-    public ObjectMapper objectMapper() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new Jdk8Module());
-        return objectMapper;
     }
 
     @Configuration
