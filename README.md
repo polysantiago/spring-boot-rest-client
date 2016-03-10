@@ -61,7 +61,7 @@ All HTTP REST methods are supported (GET, POST, PUT, PATCH and DELETE) as well a
 Retry
 -----
 
-The rest client library has retry for Spring Retry. Just by adding the spring-retry library as a dependency and `@EnableRetry` in your configuration, the retry functionality will be enabled. By default, calls are retried on `HTTP 503 SERVICE UNAVAILABLE` and `IOException` but you can configure your own:
+The rest client library can be used with Spring Retry. Just by adding the spring-retry library as a dependency and `@EnableRetry` in your configuration, the retry functionality will be enabled. By default, calls are retried on `HTTP 503 SERVICE UNAVAILABLE` and `IOException` but you can configure your own:
 
     :::java 
     @RestClient(value = "foo", retryOn = {HttpStatus.SERVICE_UNAVAILABLE, HttpStatus.BAD_GATEWAY}, retryOnException = SocketTimeoutException.class}
@@ -80,7 +80,7 @@ are shown:
             services:
                 foo: http://foo.svt.se
             retry:
-                max-attempts: 0
+                max-attempts: 3
                 back-off:
                     delay: 1000
                     max-delay: 0
