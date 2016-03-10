@@ -2,8 +2,6 @@ package se.svt.core.lib.utils.rest;
 
 import se.svt.core.lib.utils.rest.retry.RetryInterceptor;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -12,15 +10,11 @@ import org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.retry.annotation.RetryConfiguration;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
-
-import static java.util.stream.Collectors.toList;
 
 @Configuration
 @EnableConfigurationProperties(RestClientProperties.class)
@@ -33,21 +27,7 @@ public class RestClientAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public RestTemplate restTemplate() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.registerModule(new Jdk8Module());
-
-        MappingJackson2HttpMessageConverter jacksonConverter = new MappingJackson2HttpMessageConverter();
-        jacksonConverter.setObjectMapper(objectMapper);
-
-        final RestTemplate restTemplate = new RestTemplate();
-
-        //find and replace Jackson message converter with our own
-        List<HttpMessageConverter<?>> messageConverters = restTemplate.getMessageConverters().stream()
-            .filter(converter -> !(converter instanceof MappingJackson2HttpMessageConverter))
-            .collect(toList());
-        messageConverters.add(jacksonConverter);
-
-        return new RestTemplate(messageConverters);
+        return new RestTemplate();
     }
 
     @Configuration

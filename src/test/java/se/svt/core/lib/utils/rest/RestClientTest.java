@@ -1,6 +1,7 @@
 package se.svt.core.lib.utils.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -9,11 +10,14 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -27,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.client.MockRestServiceServer.createServer;
@@ -52,6 +57,25 @@ public class RestClientTest {
     @EnableAutoConfiguration
     @EnableRestClients(basePackageClasses = FooClient.class)
     protected static class TestConfiguration {
+
+        @Bean
+        public RestTemplate restTemplate() {
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.registerModule(new Jdk8Module());
+
+            MappingJackson2HttpMessageConverter jacksonConverter = new MappingJackson2HttpMessageConverter();
+            jacksonConverter.setObjectMapper(objectMapper);
+
+            final RestTemplate restTemplate = new RestTemplate();
+
+            //find and replace Jackson message converter with our own
+            List<HttpMessageConverter<?>> messageConverters = restTemplate.getMessageConverters().stream()
+                .filter(converter -> !(converter instanceof MappingJackson2HttpMessageConverter))
+                .collect(toList());
+            messageConverters.add(jacksonConverter);
+
+            return new RestTemplate(messageConverters);
+        }
 
     }
 
