@@ -24,7 +24,7 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
     private String name;
     private String url;
     private Class<?> type;
-    private RetryOperationsInterceptor retryInterceptor;
+    private RetryOperationsInterceptor retryOperationsInterceptor;
     private ApplicationContext applicationContext;
 
     @Override
@@ -44,8 +44,8 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
 
         RestClientInterceptor interceptor = new RestClientInterceptor(specification, restTemplate, getServiceUrl(context));
 
-        if (nonNull(retryInterceptor)) {
-            proxyFactory.addAdvice(retryInterceptor);
+        if (nonNull(retryOperationsInterceptor)) {
+            proxyFactory.addAdvice(retryOperationsInterceptor);
             interceptor.setRetryEnabled(true);
         }
 
