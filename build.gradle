@@ -29,7 +29,7 @@ apply plugin: 'propdeps-idea'
 
 group = "se.svt.core.lib.utils.rest"
 description = "Core Systems - Rest Client"
-version = '0.0.1-SNAPSHOT'
+version = '1.0.0'
 
 idea {
 	project {
@@ -65,8 +65,6 @@ repositories {
 
 dependencies {
     compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
-
-    compile("javax.ws.rs:javax.ws.rs-api:2.0.1")
 
     optional("org.springframework.boot:spring-boot-starter-aop:${springBootVersion}")
     optional("org.springframework.boot:spring-boot-configuration-processor:${springBootVersion}")
