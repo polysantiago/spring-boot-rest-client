@@ -39,7 +39,7 @@ public class RestClientAutoConfiguration {
 
         @Bean
         @ConditionalOnMissingBean
-        public RetryOperationsInterceptor retryOperationsInterceptor() {
+        public RetryOperationsInterceptor restClientRetryOperationsInterceptor() {
             RetryInterceptor retryInterceptor = new RetryInterceptor(properties.getRetry());
             return retryInterceptor.buildInterceptor();
         }

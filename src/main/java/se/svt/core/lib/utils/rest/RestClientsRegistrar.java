@@ -167,8 +167,8 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
         definition.addPropertyValue("url", getUrl(attributes));
         definition.addPropertyValue("type", className);
 
-        if (beanDefinitionRegistry.containsBeanDefinition("retryOperationsInterceptor")) {
-            definition.addPropertyReference("retryOperationsInterceptor", "retryOperationsInterceptor");
+        if (beanDefinitionRegistry.containsBeanDefinition("restClientRetryOperationsInterceptor")) {
+            definition.addPropertyReference("restClientRetryOperationsInterceptor", "restClientRetryOperationsInterceptor");
         }
 
         definition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);
