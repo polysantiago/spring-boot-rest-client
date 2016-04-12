@@ -68,9 +68,17 @@ class RestClientInterceptor implements MethodInterceptor {
 
         // Request
         BodyBuilder builder = RequestEntity
-            .method(toHttpMethod(isNotEmpty(request.method()) ? request.method()[0] : RequestMethod.GET), uri)
-            .accept(produces(request.produces()))
-            .contentType(contentType(request.consumes()));
+            .method(toHttpMethod(isNotEmpty(request.method()) ? request.method()[0] : RequestMethod.GET), uri);
+
+        // Accept
+        if (isNotEmpty(request.produces())) {
+            builder.accept(produces(request.produces()));
+        }
+
+        // Content-Type
+        if (isNotEmpty(request.consumes())) {
+            builder.contentType(contentType(request.consumes()));
+        }
 
         // Extra headers
         if (isNotEmpty(request.headers())) {
@@ -147,7 +155,7 @@ class RestClientInterceptor implements MethodInterceptor {
     }
 
     private static MediaType contentType(String[] consumes) {
-        return isNotEmpty(consumes) ? parseMediaType(consumes[0]) : MediaType.APPLICATION_OCTET_STREAM;
+        return parseMediaType(consumes[0]);
     }
 
     private static Object body(List<MethodParameter> parameters, Object[] arguments) {
