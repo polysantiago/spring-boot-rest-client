@@ -26,7 +26,7 @@ public class RestClientAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public RestTemplate restTemplate() {
+    public RestTemplate restClientTemplate() {
         return new RestTemplate();
     }
 
@@ -38,7 +38,6 @@ public class RestClientAutoConfiguration {
         private RestClientProperties properties;
 
         @Bean
-        @ConditionalOnMissingBean
         public RetryOperationsInterceptor restClientRetryOperationsInterceptor() {
             RetryInterceptor retryInterceptor = new RetryInterceptor(properties.getRetry());
             return retryInterceptor.buildInterceptor();
