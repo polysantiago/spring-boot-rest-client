@@ -4,6 +4,7 @@ import lombok.Setter;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
@@ -12,8 +13,9 @@ import org.springframework.util.ClassUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.util.Optional;
+import java.util.stream.Stream;
 
-import static java.util.Objects.nonNull;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 @Setter
@@ -24,7 +26,6 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
     private String name;
     private String url;
     private Class<?> type;
-    private RetryOperationsInterceptor restClientRetryOperationsInterceptor;
     private ApplicationContext applicationContext;
 
     @Override
@@ -37,6 +38,9 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         RestTemplate restTemplate = applicationContext.getBean(RestTemplate.class);
         RestClientContext context = applicationContext.getBean(RestClientContext.class);
 
+        Stream.of(applicationContext.getBeanNamesForType(RestTemplate.class))
+            .forEach(bean -> System.out.println("bean = " + bean));
+
         RestClientSpecification specification = context.findByRestClientName(name);
 
         ProxyFactory proxyFactory = new ProxyFactory();
@@ -44,10 +48,10 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
 
         RestClientInterceptor interceptor = new RestClientInterceptor(specification, restTemplate, getServiceUrl(context));
 
-        if (nonNull(restClientRetryOperationsInterceptor)) {
-            proxyFactory.addAdvice(restClientRetryOperationsInterceptor);
+        retryInterceptor().ifPresent(retryOperationsInterceptor -> {
+            proxyFactory.addAdvice(retryOperationsInterceptor);
             interceptor.setRetryEnabled(true);
-        }
+        });
 
         proxyFactory.addAdvice(interceptor);
 
@@ -59,6 +63,14 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
             return context.findServiceUriByName(name);
         }
         return URI.create(url);
+    }
+
+    private Optional<RetryOperationsInterceptor> retryInterceptor() {
+        try {
+            return Optional.of(applicationContext.getBean("restClientRetryInterceptor", RetryOperationsInterceptor.class));
+        } catch (NoSuchBeanDefinitionException ex) {
+            return Optional.empty();
+        }
     }
 
     @Override

@@ -34,11 +34,9 @@ public class RestClientAutoConfiguration {
     @ConditionalOnBean(RetryConfiguration.class)
     protected static class RestClientRetryConfiguration {
 
-        @Autowired
-        private RestClientProperties properties;
-
         @Bean
-        public RetryOperationsInterceptor restClientRetryOperationsInterceptor() {
+        @ConditionalOnMissingBean(name = "restClientRetryInterceptor")
+        public RetryOperationsInterceptor restClientRetryInterceptor(RestClientProperties properties) {
             RetryInterceptor retryInterceptor = new RetryInterceptor(properties.getRetry());
             return retryInterceptor.buildInterceptor();
         }

@@ -99,7 +99,7 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
         }
     }
 
-    protected Set<String> getBasePackages(AnnotationMetadata metadata) {
+    private Set<String> getBasePackages(AnnotationMetadata metadata) {
         Map<String, Object> attributes = metadata.getAnnotationAttributes(EnableRestClients.class.getCanonicalName());
 
         Set<String> basePackages = ImmutableSet.<String>builder()
@@ -114,7 +114,7 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
         return basePackages;
     }
 
-    protected ClassPathScanningCandidateComponentProvider getScanner() {
+    private ClassPathScanningCandidateComponentProvider getScanner() {
         return new ClassPathScanningCandidateComponentProvider(false) {
 
             @Override
@@ -151,30 +151,30 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
         throw new IllegalStateException("'value' must be provided in @" + RestClient.class.getSimpleName());
     }
 
-    private void registerClientConfiguration(BeanDefinitionRegistry beanDefinitionRegistry, String name, Map<String, Object> attributes) {
+    private void registerClientConfiguration(BeanDefinitionRegistry registry, String name, Map<String, Object> attributes) {
         BeanDefinitionBuilder builder = BeanDefinitionBuilder.genericBeanDefinition(RestClientSpecification.class)
             .addConstructorArgValue(name)
             .addConstructorArgValue(attributes.get("retryOn"))
             .addConstructorArgValue(attributes.get("retryOnException"));
-        beanDefinitionRegistry.registerBeanDefinition(name + "." + RestClientSpecification.class.getSimpleName(), builder.getBeanDefinition());
+        registry.registerBeanDefinition(name + "." + RestClientSpecification.class.getSimpleName(), builder.getBeanDefinition());
     }
 
-    private void registerRestClient(BeanDefinitionRegistry beanDefinitionRegistry, AnnotationMetadata annotationMetadata, Map<String, Object> attributes) {
+    private void registerRestClient(BeanDefinitionRegistry registry, AnnotationMetadata annotationMetadata, Map<String, Object> attributes) {
         String className = annotationMetadata.getClassName();
         BeanDefinitionBuilder definition = BeanDefinitionBuilder.genericBeanDefinition(RestClientFactoryBean.class);
 
-        definition.addPropertyValue("name", getServiceId(attributes));
+        String name = getServiceId(attributes);
+
+        definition.addPropertyValue("name", name);
         definition.addPropertyValue("url", getUrl(attributes));
         definition.addPropertyValue("type", className);
 
-        if (beanDefinitionRegistry.containsBeanDefinition("restClientRetryOperationsInterceptor")) {
-            definition.addPropertyReference("restClientRetryOperationsInterceptor", "restClientRetryOperationsInterceptor");
-        }
-
         definition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);
 
-        BeanDefinitionHolder holder = new BeanDefinitionHolder(definition.getBeanDefinition(), className);
-        BeanDefinitionReaderUtils.registerBeanDefinition(holder, beanDefinitionRegistry);
+        String alias = name + "RestClient";
+
+        BeanDefinitionHolder holder = new BeanDefinitionHolder(definition.getBeanDefinition(), className, new String[]{alias});
+        BeanDefinitionReaderUtils.registerBeanDefinition(holder, registry);
     }
 
     private String getServiceId(Map<String, Object> attributes) {
@@ -223,8 +223,7 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
     }
 
     /**
-     * Helper class to create a {@link TypeFilter} that matches if all the delegates
-     * match.
+     * Helper class to create a {@link TypeFilter} that matches if all the delegates match.
      */
     @RequiredArgsConstructor
     private static class AllTypeFilter implements TypeFilter {
