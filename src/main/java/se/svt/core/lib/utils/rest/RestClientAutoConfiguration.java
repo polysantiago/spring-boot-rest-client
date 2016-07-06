@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.retry.annotation.RetryConfiguration;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
+import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -28,6 +29,12 @@ public class RestClientAutoConfiguration {
     @ConditionalOnMissingBean
     public RestTemplate restClientTemplate() {
         return new RestTemplate();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public AsyncRestTemplate asyncRestClientTemplate() {
+        return new AsyncRestTemplate();
     }
 
     @Configuration

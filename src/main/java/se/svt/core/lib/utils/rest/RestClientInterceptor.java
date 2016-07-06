@@ -3,6 +3,7 @@ package se.svt.core.lib.utils.rest;
 import se.svt.core.lib.utils.rest.retry.RetryableException;
 import se.svt.core.lib.utils.rest.support.MethodParameters;
 import se.svt.core.lib.utils.rest.support.SyntheticParameterizedTypeReference;
+import se.svt.core.lib.utils.rest.util.*;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -15,7 +16,9 @@ import org.springframework.http.*;
 import org.springframework.http.RequestEntity.BodyBuilder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -42,6 +45,7 @@ class RestClientInterceptor implements MethodInterceptor {
 
     private final RestClientSpecification specification;
     private final RestTemplate restTemplate;
+    private final AsyncRestTemplate asyncRestTemplate;
     private final URI serviceUrl;
 
     @Setter
@@ -88,35 +92,55 @@ class RestClientInterceptor implements MethodInterceptor {
 
         RequestEntity<Object> requestEntity = builder.body(body(parameters, arguments));
 
-        ResponseEntity<?> responseEntity;
-        try {
-            if (method.getGenericReturnType() instanceof ParameterizedType) {
-                responseEntity = restTemplate.exchange(requestEntity, new SyntheticParameterizedTypeReference<>(method));
+        if (isListenableFuture(method)) {
+            SyntheticParameterizedTypeReference responseType = SyntheticParameterizedTypeReference.fromAsyncMethodReturnType(method);
+            ListenableFuture<?> listenableFuture = asyncRestTemplate.exchange(requestEntity.getUrl
+                    (),
+                requestEntity.getMethod(),
+                requestEntity, responseType);
+            if (responseType.isOptionalType()) {
+                return new NotFoundHandlingResponseFutureWrapper<>((ListenableFuture<ResponseEntity<Optional>>) listenableFuture);
             } else {
-                responseEntity = restTemplate.exchange(requestEntity, method.getReturnType());
+                return new ResponseFutureWrapper<>((ListenableFuture<ResponseEntity<Object>>) listenableFuture);
             }
-            return Optional.ofNullable(responseEntity).map(ResponseEntity::getBody).orElse(null);
-        } catch (HttpStatusCodeException ex) {
-            HttpStatus statusCode = ex.getStatusCode();
+        } else {
+            ResponseEntity<?> responseEntity;
+            try {
+                if (method.getGenericReturnType() instanceof ParameterizedType) {
+                    responseEntity = restTemplate.exchange(requestEntity,
+                        SyntheticParameterizedTypeReference.fromMethodReturnType(method));
+                } else {
+                    responseEntity = restTemplate.exchange(requestEntity, method.getReturnType());
+                }
+                return Optional.ofNullable(responseEntity).map(ResponseEntity::getBody).orElse(null);
+            } catch (HttpStatusCodeException ex) {
+                HttpStatus statusCode = ex.getStatusCode();
 
-            if (isOptional(method) && statusCode.equals(HttpStatus.NOT_FOUND)) {
-                return Optional.empty();
-            }
+                if (isOptional(method) && statusCode.equals(HttpStatus.NOT_FOUND)) {
+                    return Optional.empty();
+                }
 
-            if (retryEnabled && anyMatch(specification.getRetryableStatuses(), statusCode::equals)) {
-                throw new RetryableException(ex);
+                if (retryEnabled && anyMatch(specification.getRetryableStatuses(), statusCode::equals)) {
+                    throw new RetryableException(ex);
+                }
+                throw ex;
+            } catch (Exception ex) {
+                if (retryEnabled && anyMatch(specification.getRetryableExceptions(), clazz -> clazz.isInstance(ex) || clazz.isInstance(getRootCause(ex)))) {
+                    throw new RetryableException(ex);
+                }
+                throw ex;
             }
-            throw ex;
-        } catch (Exception ex) {
-            if (retryEnabled && anyMatch(specification.getRetryableExceptions(), clazz -> clazz.isInstance(ex) || clazz.isInstance(getRootCause(ex)))) {
-                throw new RetryableException(ex);
-            }
-            throw ex;
         }
     }
 
+    private static boolean isListenableFuture(Method method) {
+        TypeInformation typeInformation = ClassTypeInformation.fromReturnTypeOf(method);
+        Class<?> clazz = typeInformation.getType();
+        return Classes.areTheSame(ListenableFuture.class, clazz);
+    }
+
     private static boolean isOptional(Method method) {
-        return method.getReturnType().isAssignableFrom(Optional.class);
+        return Classes.areTheSame(method.getReturnType(), Optional.class);
     }
 
     private static <T> boolean anyMatch(T[] array, Predicate<T> predicate) {

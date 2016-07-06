@@ -10,11 +10,11 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
@@ -36,17 +36,17 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
     @Override
     public Object getObject() throws Exception {
         RestTemplate restTemplate = applicationContext.getBean(RestTemplate.class);
+        AsyncRestTemplate asyncRestTemplate = applicationContext.getBean(AsyncRestTemplate.class);
         RestClientContext context = applicationContext.getBean(RestClientContext.class);
-
-        Stream.of(applicationContext.getBeanNamesForType(RestTemplate.class))
-            .forEach(bean -> System.out.println("bean = " + bean));
 
         RestClientSpecification specification = context.findByRestClientName(name);
 
         ProxyFactory proxyFactory = new ProxyFactory();
         proxyFactory.addInterface(type);
 
-        RestClientInterceptor interceptor = new RestClientInterceptor(specification, restTemplate, getServiceUrl(context));
+        RestClientInterceptor interceptor = new RestClientInterceptor(specification, restTemplate, asyncRestTemplate,
+            getServiceUrl
+                (context));
 
         retryInterceptor().ifPresent(retryOperationsInterceptor -> {
             proxyFactory.addAdvice(retryOperationsInterceptor);
