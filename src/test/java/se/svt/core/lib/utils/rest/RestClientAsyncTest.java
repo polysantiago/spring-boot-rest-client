@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static java.util.stream.Collectors.toList;
@@ -138,8 +137,8 @@ public class RestClientAsyncTest {
         ListenableFuture<byte[]> raw();
 
         @RequestMapping(headers = "Some-Header:some-value")
-        ListenableFuture<Void> fooWithHeaders(@RequestHeader("User-Id") String userId, @RequestHeader("Password")
-            String password);
+        ListenableFuture<Void> fooWithHeaders(@RequestHeader("User-Id") String userId,
+                                              @RequestHeader("Password") String password);
 
     }
 
@@ -153,7 +152,7 @@ public class RestClientAsyncTest {
         asyncServer.verify();
     }
 
-    static <T> T getResponse(ListenableFuture<T> listenableFuture) throws InterruptedException, ExecutionException, TimeoutException {
+    private static <T> T getResponse(ListenableFuture<T> listenableFuture) throws Exception {
         return listenableFuture.get(10, TimeUnit.SECONDS);
     }
 

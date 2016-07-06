@@ -10,6 +10,8 @@ import org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.retry.annotation.RetryConfiguration;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.web.client.AsyncRestTemplate;
@@ -33,8 +35,11 @@ public class RestClientAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public AsyncRestTemplate asyncRestClientTemplate() {
-        return new AsyncRestTemplate();
+    @ConditionalOnBean(RestTemplate.class)
+    public AsyncRestTemplate asyncRestClientTemplate(RestTemplate restTemplate) {
+        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        requestFactory.setTaskExecutor(new SimpleAsyncTaskExecutor());
+        return new AsyncRestTemplate(requestFactory, requestFactory);
     }
 
     @Configuration

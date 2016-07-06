@@ -31,6 +31,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
 
+import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -95,6 +96,9 @@ public class RestClientTest {
 
         @RequestMapping(value = "/fooList", method = RequestMethod.GET)
         List<Foo> fooList();
+
+        @RequestMapping(value = "/fooListParams", method = RequestMethod.GET)
+        Void fooListArgument(@RequestParam("myList") List<String> params);
 
         @RequestMapping(value = "/fooArray", method = RequestMethod.GET)
         Foo[] fooArray();
@@ -196,6 +200,17 @@ public class RestClientTest {
     }
 
     @Test
+    public void testRestClientListAsParam() throws Exception {
+        List<String> params = newArrayList("abc", "cba");
+
+        server.expect(requestTo("http://localhost/fooListParams?myList=abc&myList=cba"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess());
+
+        fooClient.fooListArgument(params);
+    }
+
+    @Test
     public void testRestClientGetArray() throws Exception {
         Foo[] foos = new Foo[]{new Foo("bar0"), new Foo("bar1")};
 
@@ -212,14 +227,12 @@ public class RestClientTest {
 
     @Test
     public void testRestClientGetObjectWithNoContentShouldReturnNull() throws Exception {
-        Foo foo = new Foo("bar0");
-
         server.expect(requestTo("http://localhost/fooObject"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
         try {
-            Object response = fooClient.fooObject();
+            fooClient.fooObject();
             fail("Should get NOT FOUND");
         } catch (HttpClientErrorException exception) {
             assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());

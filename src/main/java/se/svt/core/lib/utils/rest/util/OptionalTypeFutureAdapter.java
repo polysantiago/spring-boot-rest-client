@@ -12,10 +12,22 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class NotFoundHandlingResponseFutureWrapper<T extends Optional<?>> extends ResponseFutureWrapper<T> {
+public class OptionalTypeFutureAdapter<T extends Optional<?>> extends ResponseFutureAdapter<T> {
 
-    public NotFoundHandlingResponseFutureWrapper(ListenableFuture<ResponseEntity<T>> delegate) {
+    public OptionalTypeFutureAdapter(ListenableFuture<ResponseEntity<T>> delegate) {
         super(delegate);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void addCallback(SuccessCallback<? super T> successCallback, FailureCallback failureCallback) {
+        super.addCallback(successCallback, throwable -> {
+            if (isNotFoundException(throwable)) {
+                successCallback.onSuccess((T) Optional.empty());
+            } else {
+                failureCallback.onFailure(throwable);
+            }
+        });
     }
 
     @Override
@@ -36,6 +48,7 @@ public class NotFoundHandlingResponseFutureWrapper<T extends Optional<?>> extend
         }
     }
 
+    @SuppressWarnings("unchecked")
     private T handleExecutionException(ExecutionException executionException) throws ExecutionException {
         if (isNotFoundException(executionException.getCause())) {
             return (T) Optional.empty();
@@ -43,30 +56,9 @@ public class NotFoundHandlingResponseFutureWrapper<T extends Optional<?>> extend
         throw executionException;
     }
 
-    @Override
-    NotFoundTranslatingCallback<T> createCallback(SuccessCallback<? super T> successCallback, FailureCallback
-        failureCallback) {
-        return new NotFoundTranslatingCallback<T>(successCallback, failureCallback);
-    }
-
     private static boolean isNotFoundException(Throwable throwable) {
         return throwable instanceof HttpClientErrorException &&
             ((HttpClientErrorException) throwable).getStatusCode() == HttpStatus.NOT_FOUND;
     }
 
-    static class NotFoundTranslatingCallback<S> extends MyCallback<S> {
-
-        public NotFoundTranslatingCallback(SuccessCallback successCallback, FailureCallback failureCallback) {
-            super(successCallback, failureCallback);
-        }
-
-        @Override
-        public void onFailure(Throwable throwable) {
-            if (isNotFoundException(throwable)) {
-                successCallback.onSuccess((S) Optional.empty());
-            } else {
-                super.onFailure(throwable);
-            }
-        }
-    }
 }

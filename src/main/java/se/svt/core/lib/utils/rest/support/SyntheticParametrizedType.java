@@ -4,14 +4,14 @@ import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
-public final class SyntheticParameterizedType implements ParameterizedType, Serializable {
+public final class SyntheticParametrizedType implements ParameterizedType, Serializable {
 
     private static final long serialVersionUID = -521679299810654826L;
 
     private final Type rawType;
     private final Type[] typeArguments;
 
-    public SyntheticParameterizedType(Type rawType, Type... typeArguments) {
+    public SyntheticParametrizedType(Type rawType, Type... typeArguments) {
         this.rawType = rawType;
         this.typeArguments = typeArguments;
     }

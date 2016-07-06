@@ -18,9 +18,9 @@ import static org.mockito.Mockito.verify;
 
 
 @RunWith(MockitoJUnitRunner.class)
-public class NotFoundHandlingResponseFutureWrapperTest {
+public class OptionalTypeFutureAdapterTest {
 
-    private NotFoundHandlingResponseFutureWrapper listenableFutureWrapper;
+    private OptionalTypeFutureAdapter listenableFutureWrapper;
 
     private SettableListenableFuture<ResponseEntity<Optional<String>>> wrappedFuture;
     private ResponseEntity<Optional<String>> responseEntity;
@@ -32,7 +32,7 @@ public class NotFoundHandlingResponseFutureWrapperTest {
         responseEntity = mock(ResponseEntity.class);
         callback = mock(ListenableFutureCallback.class);
 
-        listenableFutureWrapper = new NotFoundHandlingResponseFutureWrapper(wrappedFuture);
+        listenableFutureWrapper = new OptionalTypeFutureAdapter(wrappedFuture);
         listenableFutureWrapper.addCallback(callback);
     }
 

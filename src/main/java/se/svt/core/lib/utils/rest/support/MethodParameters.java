@@ -106,7 +106,7 @@ public class MethodParameters {
          * @param parameterIndex
          * @param attribute      can be {@literal null}
          */
-        public AnnotationNamingMethodParameter(Method method, int parameterIndex, AnnotationAttribute attribute) {
+        AnnotationNamingMethodParameter(Method method, int parameterIndex, AnnotationAttribute attribute) {
             super(method, parameterIndex);
             this.attribute = attribute;
         }
