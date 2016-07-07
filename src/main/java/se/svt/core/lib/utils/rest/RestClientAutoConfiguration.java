@@ -39,7 +39,7 @@ public class RestClientAutoConfiguration {
     public AsyncRestTemplate asyncRestClientTemplate(RestTemplate restTemplate) {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setTaskExecutor(new SimpleAsyncTaskExecutor());
-        return new AsyncRestTemplate(requestFactory, requestFactory);
+        return new AsyncRestTemplate(requestFactory, restTemplate);
     }
 
     @Configuration
