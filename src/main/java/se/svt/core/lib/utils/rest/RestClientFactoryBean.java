@@ -44,7 +44,10 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         ProxyFactory proxyFactory = new ProxyFactory();
         proxyFactory.addInterface(type);
 
-        RestClientInterceptor interceptor = new RestClientInterceptor(specification, restTemplate, asyncRestTemplate,
+        SyncRequestHelper syncRequestHelper = new SyncRequestHelper(specification, restTemplate);
+        AsyncRequestHelper asyncRequestHelper = new AsyncRequestHelper(asyncRestTemplate);
+
+        RestClientInterceptor interceptor = new RestClientInterceptor(syncRequestHelper, asyncRequestHelper,
             getServiceUrl(context));
 
         retryInterceptor().ifPresent(retryOperationsInterceptor -> {
