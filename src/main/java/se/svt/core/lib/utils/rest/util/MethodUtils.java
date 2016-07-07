@@ -6,7 +6,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.Optional;
 
 @UtilityClass
 public class MethodUtils {
@@ -23,9 +22,5 @@ public class MethodUtils {
     public static boolean returnTypeIsAnyOf(Method method, Class<?>... returnTypes) {
         Class<?> clazz = ClassTypeInformation.fromReturnTypeOf(method).getType();
         return Arrays.stream(returnTypes).anyMatch(returnType -> Objects.equals(returnType, clazz));
-    }
-
-    public static boolean returnTypeIsOptional(Method method) {
-        return Objects.equals(method.getReturnType(), Optional.class);
     }
 }
