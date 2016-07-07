@@ -3,6 +3,8 @@ package se.svt.core.lib.utils.rest.support;
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public final class SyntheticParametrizedType implements ParameterizedType, Serializable {
 
@@ -29,5 +31,11 @@ public final class SyntheticParametrizedType implements ParameterizedType, Seria
     @Override
     public Type getOwnerType() {
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s<%s<%s>>", SyntheticParametrizedType.class.getName(), rawType.getTypeName(),
+            Arrays.stream(typeArguments).map(Type::getTypeName).collect(Collectors.joining(",")));
     }
 }

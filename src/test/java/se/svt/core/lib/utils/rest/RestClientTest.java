@@ -12,10 +12,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
+import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.context.ActiveProfiles;
@@ -33,6 +30,7 @@ import java.util.Optional;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -135,6 +133,13 @@ public class RestClientTest {
 
         @RequestMapping(headers = "Some-Header:some-value")
         Void fooWithHeaders(@RequestHeader("User-Id") String userId, @RequestHeader("Password") String password);
+
+        @RequestMapping
+        ResponseEntity<String> getEntity();
+
+        @RequestMapping
+        HttpEntity<String> getHttpEntity();
+
 
     }
 
@@ -352,5 +357,34 @@ public class RestClientTest {
             .andRespond(withSuccess());
 
         fooClient.fooWithHeaders("userId", "password");
+    }
+
+    @Test
+    public void testGetEntity() throws Exception {
+        String responseString = "RESPSONSE!^$";
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.add("someHeader", "someHeaderValue");
+        server.expect(requestTo("http://localhost/"))
+            .andExpect((method(HttpMethod.GET)))
+            .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
+
+        ResponseEntity<String> responseEntity = fooClient.getEntity();
+        assertThat(responseEntity.getBody(), is(responseString));
+        assertThat(responseEntity.getHeaders().get("someHeader"), is(singletonList("someHeaderValue")));
+        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+    }
+
+    @Test
+    public void testGetHttpEntity() throws Exception {
+        String responseString = "RESPSONSE!^$";
+        HttpHeaders responseHeaders = new HttpHeaders();
+        responseHeaders.add("someHeader", "someHeaderValue");
+        server.expect(requestTo("http://localhost/"))
+            .andExpect((method(HttpMethod.GET)))
+            .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
+
+        HttpEntity<String> responseEntity = fooClient.getHttpEntity();
+        assertThat(responseEntity.getBody(), is(responseString));
+        assertThat(responseEntity.getHeaders().get("someHeader"), is(singletonList("someHeaderValue")));
     }
 }

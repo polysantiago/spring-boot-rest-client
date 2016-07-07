@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.util.concurrent.ListenableFuture;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -16,7 +15,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
-import static org.apache.commons.lang3.ObjectUtils.notEqual;
 
 @Getter
 @EqualsAndHashCode(callSuper = false, of = "type")
@@ -25,30 +23,44 @@ import static org.apache.commons.lang3.ObjectUtils.notEqual;
 public class SyntheticParametrizedTypeReference<T> extends ParameterizedTypeReference<T> {
 
     private final Type type;
-    private final boolean optionalType;
+    private final TypeInformation<?> typeInformation;
 
     public static <T> SyntheticParametrizedTypeReference<T> fromMethodReturnType(Method method) {
         TypeInformation<?> typeInformation = ClassTypeInformation.fromReturnTypeOf(method);
         return fromTypeInformation(typeInformation);
     }
 
-    public static <T> SyntheticParametrizedTypeReference<T> fromAsyncMethodReturnType(Method method) {
-        TypeInformation<?> typeInformation = ClassTypeInformation.fromReturnTypeOf(method);
-        if (notEqual(ListenableFuture.class, typeInformation.getType())) {
-            throw new IllegalArgumentException("Illegal return type of method, should be ListenableFuture, was " + typeInformation.getClass());
+//    public static <T> SyntheticParametrizedTypeReference<T> fromMethodReturnTypeTypeArgument(Method method) {
+//        TypeInformation<?> typeInformation = ClassTypeInformation.fromReturnTypeOf(method);
+//        if (!MethodUtils.returnTypeIsGeneric(method)) {
+//            throw new IllegalArgumentException("Illegal return type of method, must be generic type, was " +
+//                typeInformation.getClass());
+//        }
+//        typeInformation = typeInformation.getTypeArguments().get(0);
+//        return fromTypeInformation(typeInformation);
+//    }
+
+    public <S> SyntheticParametrizedTypeReference<S> getTypeArgument(int argumentIndex) {
+        if (argumentIndex > typeInformation.getTypeArguments().size()) {
+            throw new IndexOutOfBoundsException(
+                String.format("Argument index %d out of bound, type only has %d type argments",
+                    argumentIndex, typeInformation.getTypeArguments().size()));
         }
-        typeInformation = typeInformation.getTypeArguments().get(0);
-        return fromTypeInformation(typeInformation);
+        TypeInformation<?> typeArgument = typeInformation.getTypeArguments().get(argumentIndex);
+        return fromTypeInformation(typeArgument);
     }
 
     private static <T> SyntheticParametrizedTypeReference<T> fromTypeInformation(TypeInformation typeInformation) {
         Class<?> type = typeInformation.getRawTypeInformation().getType();
-        boolean optionalType = Objects.equals(Optional.class, type);
         if (isGeneric(typeInformation)) {
             SyntheticParametrizedType parametrizedType = new SyntheticParametrizedType(type, getTypeArguments(typeInformation));
-            return new SyntheticParametrizedTypeReference<>(parametrizedType, optionalType);
+            return new SyntheticParametrizedTypeReference<>(parametrizedType, typeInformation);
         }
-        return new SyntheticParametrizedTypeReference<>(type, optionalType);
+        return new SyntheticParametrizedTypeReference<>(type, typeInformation);
+    }
+
+    public boolean isOptionalType() {
+        return Objects.equals(typeInformation.getRawTypeInformation().getType(), Optional.class);
     }
 
     private static boolean isGeneric(TypeInformation<?> typeInformation) {
