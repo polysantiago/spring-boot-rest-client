@@ -24,7 +24,7 @@ apply plugin: 'propdeps-idea'
 
 group = "se.svt.core.lib.utils.rest"
 description = "Core Systems - Rest Client"
-version = '1.1.1'
+version = '1.2.0'
 
 idea {
     project {
@@ -81,6 +81,8 @@ dependencies {
     compile('org.apache.commons:commons-lang3')
     compile('org.apache.commons:commons-collections4:4.1')
     // end::utils[]
+
+    compile('net.javacrumbs.future-converter:future-converter-spring-java8:0.3.0')
 
     testCompile("org.springframework.boot:spring-boot-starter-test")
     testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")

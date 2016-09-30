@@ -10,6 +10,9 @@ import org.springframework.util.concurrent.ListenableFuture;
 
 import java.lang.reflect.Method;
 import java.net.URI;
+import java.util.concurrent.CompletableFuture;
+
+import static net.javacrumbs.futureconverter.springjava.FutureConverter.toCompletableFuture;
 
 @RequiredArgsConstructor
 class RestClientInterceptor implements MethodInterceptor {
@@ -29,6 +32,9 @@ class RestClientInterceptor implements MethodInterceptor {
 
         if (MethodUtils.returnTypeIs(method, ListenableFuture.class)) {
             return asyncRequestHelper.executeAsyncRequest(method, requestEntity);
+        }
+        if (MethodUtils.returnTypeIs(method, CompletableFuture.class)) {
+            return toCompletableFuture(asyncRequestHelper.executeAsyncRequest(method, requestEntity));
         }
         return syncRequestHelper.executeRequest(method, requestEntity);
     }
