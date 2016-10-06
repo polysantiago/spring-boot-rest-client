@@ -10,10 +10,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.notNullValue;
-import static org.springframework.boot.test.EnvironmentTestUtils.addEnvironment;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class RestClientPropertiesTest {
 
@@ -65,18 +63,18 @@ public class RestClientPropertiesTest {
 
     private static void assertProperties(RestClientProperties properties,
                                          int maxAttempts, long delay, long maxDelay, double multiplier, boolean random) {
-        assertThat(properties, is(notNullValue()));
+        assertThat(properties).isNotNull();
 
         RetrySettings retry = properties.getRetry();
-        assertThat(retry, is(notNullValue()));
-        assertThat(retry.getMaxAttempts(), is(maxAttempts));
+        assertThat(retry).isNotNull();
+        assertThat(retry.getMaxAttempts()).isEqualTo(maxAttempts);
 
         BackOffSettings backOff = retry.getBackOff();
-        assertThat(backOff, is(notNullValue()));
-        assertThat(backOff.getDelay(), is(delay));
-        assertThat(backOff.getMaxDelay(), is(maxDelay));
-        assertThat(backOff.getMultiplier(), is(multiplier));
-        assertThat(backOff.isRandom(), is(random));
+        assertThat(backOff).isNotNull();
+        assertThat(backOff.getDelay()).isEqualTo(delay);
+        assertThat(backOff.getMaxDelay()).isEqualTo(maxDelay);
+        assertThat(backOff.getMultiplier()).isEqualTo(multiplier);
+        assertThat(backOff.isRandom()).isEqualTo(random);
     }
 
     @Configuration

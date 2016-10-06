@@ -16,20 +16,21 @@ import org.springframework.web.client.AsyncRestTemplate;
 import java.lang.reflect.Method;
 import java.util.Optional;
 
+import static se.svt.core.lib.utils.rest.support.SyntheticParametrizedTypeReference.fromMethodReturnType;
+
 @RequiredArgsConstructor
 class AsyncRequestHelper {
 
     private final AsyncRestTemplate asyncRestTemplate;
 
-    Object executeAsyncRequest(Method method, RequestEntity<Object> requestEntity) {
-        SyntheticParametrizedTypeReference<?> returnType = SyntheticParametrizedTypeReference
-            .fromMethodReturnType(method).getTypeArgument(0);
-        if (TypeUtils.typeIsAnyOf(returnType, HttpEntity.class, ResponseEntity.class)) {
-            SyntheticParametrizedTypeReference<?> responseType = returnType.getTypeArgument(0);
+    ListenableFuture<?> executeAsyncRequest(Method method, RequestEntity<Object> requestEntity) {
+        SyntheticParametrizedTypeReference<?> wrappedReturnType = fromMethodReturnType(method).getTypeArgument(0);
+        if (TypeUtils.typeIsAnyOf(wrappedReturnType, HttpEntity.class, ResponseEntity.class)) {
+            SyntheticParametrizedTypeReference<?> responseType = wrappedReturnType.getTypeArgument(0);
             return sendAsyncRequest(requestEntity, responseType);
         }
-        ListenableFuture<? extends ResponseEntity<?>> listenableFuture = sendAsyncRequest(requestEntity, returnType);
-        if (TypeUtils.typeIs(returnType, Optional.class)) {
+        ListenableFuture<? extends ResponseEntity<?>> listenableFuture = sendAsyncRequest(requestEntity, wrappedReturnType);
+        if (TypeUtils.typeIs(wrappedReturnType, Optional.class)) {
             return createOptionalTypeAdapter(listenableFuture);
         }
         return createObjectAdapter(listenableFuture);

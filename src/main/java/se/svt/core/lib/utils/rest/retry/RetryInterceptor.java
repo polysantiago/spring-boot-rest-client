@@ -19,11 +19,11 @@ public class RetryInterceptor {
     public RetryOperationsInterceptor buildInterceptor() {
         return RetryInterceptorBuilder.stateless()
             .retryPolicy(new SimpleRetryPolicy(retrySettings.getMaxAttempts(), ImmutableMap.of(RetryableException.class, true)))
-            .backOffPolicy(getBackoffPolicy())
+            .backOffPolicy(getBackOffPolicy())
             .build();
     }
 
-    private BackOffPolicy getBackoffPolicy() {
+    private BackOffPolicy getBackOffPolicy() {
         BackOffSettings backOff = retrySettings.getBackOff();
         long min = backOff.getDelay();
         long max = backOff.getMaxDelay();

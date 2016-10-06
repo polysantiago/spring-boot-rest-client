@@ -1,7 +1,8 @@
 package se.svt.core.lib.utils.rest;
 
+import se.svt.core.lib.utils.rest.AbstractRestClientAsyncTest.AsyncFooClient;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -9,19 +10,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.*;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.AsyncRestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
 import java.net.URI;
@@ -29,120 +31,41 @@ import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Fail.fail;
 import static org.springframework.test.web.client.MockRestServiceServer.createServer;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 @ActiveProfiles("test")
-@SpringApplicationConfiguration(classes = RestClientAsyncTest.TestConfiguration.class)
-public class RestClientAsyncTest {
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
 
     @Autowired
-    private AsyncFooClient fooClient;
+    T fooClient;
 
     @Autowired
-    private AsyncRestTemplate asyncRestTemplate;
+    private ObjectMapper objectMapper;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    AsyncRestTemplate asyncRestTemplate;
 
-    private MockRestServiceServer asyncServer;
+    MockRestServiceServer asyncServer;
 
-    @Configuration
+    @TestConfiguration
     @EnableAutoConfiguration
-    @EnableRestClients(basePackageClasses = AsyncFooClient.class)
-    protected static class TestConfiguration {
+    static class BaseTestConfiguration {
 
         @Bean
-        public AsyncRestTemplate asyncRestTemplate() {
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.registerModule(new Jdk8Module());
-
-            MappingJackson2HttpMessageConverter jacksonConverter = new MappingJackson2HttpMessageConverter();
-            jacksonConverter.setObjectMapper(objectMapper);
-
-            AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate();
-
-            //find and replace Jackson message converter with our own
-            List<HttpMessageConverter<?>> messageConverters = asyncRestTemplate.getMessageConverters().stream()
-                .filter(converter -> !(converter instanceof MappingJackson2HttpMessageConverter))
-                .collect(toList());
-            messageConverters.add(jacksonConverter);
-
-            asyncRestTemplate.setMessageConverters(messageConverters);
-            return asyncRestTemplate;
+        public AsyncRestTemplate asyncRestTemplate(RestTemplateBuilder builder) {
+            return new AsyncRestTemplate(new SimpleClientHttpRequestFactory(), builder.build());
         }
-
-    }
-
-    @RestClient(value = "localhost", url = "${localhost.uri}")
-    interface AsyncFooClient {
-
-        @RequestMapping
-        ListenableFuture<String> defaultFoo();
-
-        @RequestMapping(value = "/{id}")
-        ListenableFuture<String> foo(@PathVariable("id") String id, @RequestParam("query") String query);
-
-        @RequestMapping(value = "/foo/{id}")
-        ListenableFuture<Foo> getFoo(@PathVariable("id") String id);
-
-        @RequestMapping(value = "/fooList", method = RequestMethod.GET)
-        ListenableFuture<List<Foo>> fooList();
-
-        @RequestMapping(value = "/fooArray", method = RequestMethod.GET)
-        ListenableFuture<Foo[]> fooArray();
-
-        @RequestMapping(value = "/fooObject", method = RequestMethod.GET)
-        ListenableFuture<Object> fooObject();
-
-        @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
-        ListenableFuture<Foo> getFooWithAcceptHeader(@PathVariable("id") String id);
-
-        @RequestMapping(value = "/", method = RequestMethod.POST)
-        ListenableFuture<Void> bar(String body);
-
-        @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
-        ListenableFuture<Void> barWithContentType(Foo foo);
-
-        @RequestMapping(method = RequestMethod.PUT)
-        ListenableFuture<Void> barPut(String body);
-
-        @RequestMapping(method = RequestMethod.PATCH)
-        ListenableFuture<Void> barPatch(String body);
-
-        @RequestMapping(method = RequestMethod.DELETE)
-        ListenableFuture<Void> barDelete(String body);
-
-        @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-        ListenableFuture<Optional<Foo>> tryNonEmptyOptional();
-
-        @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-        ListenableFuture<Optional<String>> tryEmptyOptional();
-
-        @RequestMapping(produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-        ListenableFuture<byte[]> raw();
-
-        @RequestMapping(headers = "Some-Header:some-value")
-        ListenableFuture<Void> fooWithHeaders(@RequestHeader("User-Id") String userId,
-                                              @RequestHeader("Password") String password);
-
-        @RequestMapping
-        ListenableFuture<ResponseEntity<String>> getEntity();
-
-        @RequestMapping
-        ListenableFuture<HttpEntity<String>> getHttpEntity();
 
     }
 
@@ -156,10 +79,6 @@ public class RestClientAsyncTest {
         asyncServer.verify();
     }
 
-    private static <T> T getResponse(ListenableFuture<T> listenableFuture) throws Exception {
-        return listenableFuture.get(10, TimeUnit.SECONDS);
-    }
-
     @Test
     public void testRestClientDefaultMapping() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
@@ -168,7 +87,7 @@ public class RestClientAsyncTest {
 
         String response = getResponse(fooClient.defaultFoo());
 
-        assertThat(response, is("success"));
+        assertThat(response).isEqualTo("success");
     }
 
     @Test
@@ -190,8 +109,8 @@ public class RestClientAsyncTest {
 
         Foo response = getResponse(fooClient.getFoo("some-id"));
 
-        assertThat(response, is(notNullValue()));
-        assertThat(response.getBar(), is("bar"));
+        assertThat(response).isNotNull();
+        assertThat(response.getBar()).isEqualTo("bar");
     }
 
     @Test
@@ -206,9 +125,9 @@ public class RestClientAsyncTest {
 
         List<Foo> fooList = getResponse(fooClient.fooList());
 
-        assertThat(fooList, hasSize(2));
-        assertThat(fooList.get(0).getBar(), is("bar0"));
-        assertThat(fooList.get(1).getBar(), is("bar1"));
+        assertThat(fooList).hasSize(2);
+        assertThat(fooList.get(0).getBar()).isEqualTo("bar0");
+        assertThat(fooList.get(1).getBar()).isEqualTo("bar1");
     }
 
     @Test
@@ -221,9 +140,23 @@ public class RestClientAsyncTest {
 
         Foo[] fooArray = getResponse(fooClient.fooArray());
 
-        assertThat(fooArray, arrayWithSize(2));
-        assertThat(fooArray[0].getBar(), is("bar0"));
-        assertThat(fooArray[1].getBar(), is("bar1"));
+        assertThat(fooArray).hasSize(2);
+        assertThat(fooArray[0].getBar()).isEqualTo("bar0");
+        assertThat(fooArray[1].getBar()).isEqualTo("bar1");
+    }
+
+    @Test
+    public void testRestClientGetObjectWithNoContentShouldReturnNull() throws Exception {
+        asyncServer.expect(requestTo("http://localhost/fooObject"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        try {
+            getResponse(fooClient.fooObject());
+            fail("Should get NOT FOUND");
+        } catch (ExecutionException executionException) {
+            assertThat(executionException).hasCauseExactlyInstanceOf(HttpClientErrorException.class);
+        }
     }
 
     @Test
@@ -255,7 +188,7 @@ public class RestClientAsyncTest {
             getResponse(fooClient.bar("some-body"));
             fail("Should have gotten Exception");
         } catch (ExecutionException executionException) {
-            assertTrue(executionException.getCause() instanceof HttpServerErrorException);
+            assertThat(executionException).hasCauseExactlyInstanceOf(HttpServerErrorException.class);
         }
     }
 
@@ -308,7 +241,7 @@ public class RestClientAsyncTest {
             getResponse(fooClient.defaultFoo());
             fail("Should have gotten exception");
         } catch (ExecutionException executionException) {
-            assertTrue(executionException.getCause() instanceof HttpServerErrorException);
+            assertThat(executionException).hasCauseExactlyInstanceOf(HttpServerErrorException.class);
         }
     }
 
@@ -320,10 +253,7 @@ public class RestClientAsyncTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
 
-        Optional<Foo> optional = getResponse(fooClient.tryNonEmptyOptional());
-
-        assertThat(optional.isPresent(), is(true));
-        assertThat(optional.get(), is(foo));
+        assertThat(getResponse(fooClient.tryNonEmptyOptional())).hasValue(foo);
     }
 
     @Test
@@ -332,21 +262,7 @@ public class RestClientAsyncTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-        Optional<String> optional = getResponse(fooClient.tryEmptyOptional());
-
-        assertThat(optional.isPresent(), is(false));
-    }
-
-    @Test
-    public void testRestClientWithEmptyOptionalAndCallback() throws Exception {
-        asyncServer.expect(requestTo("http://localhost/"))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withStatus(HttpStatus.NOT_FOUND));
-        ListenableFutureCallback<Optional<String>> callback = mock(ListenableFutureCallback.class);
-
-        fooClient.tryEmptyOptional().addCallback(callback);
-
-        verify(callback, timeout(10000)).onSuccess(eq(Optional.empty()));
+        assertThat(getResponse(fooClient.tryEmptyOptional())).isNotPresent();
     }
 
     @Test
@@ -357,7 +273,7 @@ public class RestClientAsyncTest {
 
         byte[] raw = getResponse(fooClient.raw());
 
-        assertThat(StringUtils.toEncodedString(raw, Charset.defaultCharset()), is("success"));
+        assertThat(StringUtils.toEncodedString(raw, Charset.defaultCharset())).isEqualTo("success");
     }
 
     @Test
@@ -382,9 +298,9 @@ public class RestClientAsyncTest {
             .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
 
         ResponseEntity<String> responseEntity = getResponse(fooClient.getEntity());
-        assertThat(responseEntity.getBody(), is(responseString));
-        assertThat(responseEntity.getHeaders().get("someHeader"), is(singletonList("someHeaderValue")));
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+        assertThat(responseEntity.getBody()).isEqualTo(responseString);
+        assertThat(responseEntity.getHeaders().get("someHeader")).isEqualTo(singletonList("someHeaderValue"));
+        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
@@ -397,7 +313,52 @@ public class RestClientAsyncTest {
             .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
 
         HttpEntity<String> responseEntity = getResponse(fooClient.getHttpEntity());
-        assertThat(responseEntity.getBody(), is(responseString));
-        assertThat(responseEntity.getHeaders().get("someHeader"), is(singletonList("someHeaderValue")));
+        assertThat(responseEntity.getBody()).isEqualTo(responseString);
+        assertThat(responseEntity.getHeaders().get("someHeader")).isEqualTo(singletonList("someHeaderValue"));
+    }
+
+    interface AsyncFooClient {
+
+        Future<String> defaultFoo();
+
+        Future<String> foo(@PathVariable("id") String id, @RequestParam("query") String query);
+
+        Future<Foo> getFoo(@PathVariable("id") String id);
+
+        Future<List<Foo>> fooList();
+
+        Future<Foo[]> fooArray();
+
+        Future<Object> fooObject();
+
+        Future<Foo> getFooWithAcceptHeader(@PathVariable("id") String id);
+
+        Future<Void> bar(String body);
+
+        Future<Void> barWithContentType(Foo foo);
+
+        Future<Void> barPut(String body);
+
+        Future<Void> barPatch(String body);
+
+        Future<Void> barDelete(String body);
+
+        Future<Optional<Foo>> tryNonEmptyOptional();
+
+        Future<Optional<String>> tryEmptyOptional();
+
+        Future<byte[]> raw();
+
+        Future<Void> fooWithHeaders(@RequestHeader("User-Id") String userId,
+                                    @RequestHeader("Password") String password);
+
+        Future<ResponseEntity<String>> getEntity();
+
+        Future<HttpEntity<String>> getHttpEntity();
+
+    }
+
+    private <U> U getResponse(Future<U> future) throws Exception {
+        return future.get(10, TimeUnit.SECONDS);
     }
 }

@@ -7,28 +7,30 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 
+import static org.springframework.test.web.client.MockRestServiceServer.bindTo;
 import static org.springframework.test.web.client.MockRestServiceServer.createServer;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
-@RunWith(SpringJUnit4ClassRunner.class)
 @ActiveProfiles("test")
-@SpringApplicationConfiguration(classes = RestClientRetryTest.TestConfiguration.class)
+@RunWith(SpringRunner.class)
+@SpringBootTest
 public class RestClientRetryTest {
 
     @Autowired
@@ -50,7 +52,7 @@ public class RestClientRetryTest {
 
     }
 
-    @RestClient(name = "localhost", retryOn = {HttpStatus.SERVICE_UNAVAILABLE}, retryOnException = {IOException.class})
+    @RestClient(name = "localhost", retryOn = {HttpStatus.SERVICE_UNAVAILABLE}, retryOnException = {ResourceAccessException.class})
     interface FooClient {
 
         @RequestMapping
@@ -92,13 +94,18 @@ public class RestClientRetryTest {
 
     @Test
     public void testShouldRetryOnIoException() throws Exception {
-        server.expect(requestTo(defaultUrl()))
+        // This is a workaround needed because of a glitch in SimpleRequestExpectationManager.
+        // If using SimpleRequestExpectationManager, afterExpectationsDeclared() fails due to the request not properly
+        // being registered as the response throws an Exception.
+        MockRestServiceServer unorderedServer = bindTo(restTemplate).ignoreExpectOrder(true).build();
+
+        unorderedServer.expect(requestTo(defaultUrl()))
             .andExpect(method(HttpMethod.GET))
             .andRespond(request -> {
                 throw new IOException();
             });
 
-        server.expect(requestTo(defaultUrl()))
+        unorderedServer.expect(requestTo(defaultUrl()))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess());
 
