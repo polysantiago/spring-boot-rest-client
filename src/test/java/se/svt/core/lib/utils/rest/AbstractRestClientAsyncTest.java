@@ -3,22 +3,27 @@ package se.svt.core.lib.utils.rest;
 import se.svt.core.lib.utils.rest.AbstractRestClientAsyncTest.AsyncFooClient;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.http.*;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.AsyncRestTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 
 import java.net.URI;
@@ -31,53 +36,38 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
-import static org.hamcrest.Matchers.arrayWithSize;
-import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.notNullValue;
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Fail.fail;
 import static org.springframework.test.web.client.MockRestServiceServer.createServer;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
+@ActiveProfiles("test")
+@RunWith(SpringRunner.class)
+@SpringBootTest
 public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
 
     @Autowired
     T fooClient;
 
     @Autowired
-    AsyncRestTemplate asyncRestTemplate;
+    private ObjectMapper objectMapper;
 
-    final ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    AsyncRestTemplate asyncRestTemplate;
 
     MockRestServiceServer asyncServer;
 
-    @Configuration
-    protected static class TestConfiguration {
+    @TestConfiguration
+    @EnableAutoConfiguration
+    static class BaseTestConfiguration {
 
         @Bean
-        public AsyncRestTemplate asyncRestTemplate() {
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.registerModule(new Jdk8Module());
-
-            MappingJackson2HttpMessageConverter jacksonConverter = new MappingJackson2HttpMessageConverter();
-            jacksonConverter.setObjectMapper(objectMapper);
-
-            AsyncRestTemplate asyncRestTemplate = new AsyncRestTemplate();
-
-            //find and replace Jackson message converter with our own
-            List<HttpMessageConverter<?>> messageConverters = asyncRestTemplate.getMessageConverters().stream()
-                    .filter(converter -> !(converter instanceof MappingJackson2HttpMessageConverter))
-                    .collect(toList());
-            messageConverters.add(jacksonConverter);
-
-            asyncRestTemplate.setMessageConverters(messageConverters);
-            return asyncRestTemplate;
+        public AsyncRestTemplate asyncRestTemplate(RestTemplateBuilder builder) {
+            return new AsyncRestTemplate(new SimpleClientHttpRequestFactory(), builder.build());
         }
 
     }
-
 
     @Before
     public void setUp() throws Exception {
@@ -89,23 +79,22 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
         asyncServer.verify();
     }
 
-
     @Test
     public void testRestClientDefaultMapping() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess("success", MediaType.TEXT_PLAIN));
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess("success", MediaType.TEXT_PLAIN));
 
         String response = getResponse(fooClient.defaultFoo());
 
-        assertThat(response, is("success"));
+        assertThat(response).isEqualTo("success");
     }
 
     @Test
     public void testRestClientGet() throws Exception {
         asyncServer.expect(requestTo("http://localhost/some-id?query=some-query"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess());
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess());
 
         fooClient.foo("some-id", "some-query");
     }
@@ -115,13 +104,13 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
         Foo foo = new Foo("bar");
 
         asyncServer.expect(requestTo("http://localhost/foo/some-id"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
 
         Foo response = getResponse(fooClient.getFoo("some-id"));
 
-        assertThat(response, is(notNullValue()));
-        assertThat(response.getBar(), is("bar"));
+        assertThat(response).isNotNull();
+        assertThat(response.getBar()).isEqualTo("bar");
     }
 
     @Test
@@ -131,14 +120,14 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
         foos.add(new Foo("bar1"));
 
         asyncServer.expect(requestTo("http://localhost/fooList"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(objectMapper.writeValueAsBytes(foos), MediaType.APPLICATION_JSON));
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(objectMapper.writeValueAsBytes(foos), MediaType.APPLICATION_JSON));
 
         List<Foo> fooList = getResponse(fooClient.fooList());
 
-        assertThat(fooList, hasSize(2));
-        assertThat(fooList.get(0).getBar(), is("bar0"));
-        assertThat(fooList.get(1).getBar(), is("bar1"));
+        assertThat(fooList).hasSize(2);
+        assertThat(fooList.get(0).getBar()).isEqualTo("bar0");
+        assertThat(fooList.get(1).getBar()).isEqualTo("bar1");
     }
 
     @Test
@@ -146,22 +135,36 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
         Foo[] foos = new Foo[]{new Foo("bar0"), new Foo("bar1")};
 
         asyncServer.expect(requestTo("http://localhost/fooArray"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(objectMapper.writeValueAsBytes(foos), MediaType.APPLICATION_JSON));
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(objectMapper.writeValueAsBytes(foos), MediaType.APPLICATION_JSON));
 
         Foo[] fooArray = getResponse(fooClient.fooArray());
 
-        assertThat(fooArray, arrayWithSize(2));
-        assertThat(fooArray[0].getBar(), is("bar0"));
-        assertThat(fooArray[1].getBar(), is("bar1"));
+        assertThat(fooArray).hasSize(2);
+        assertThat(fooArray[0].getBar()).isEqualTo("bar0");
+        assertThat(fooArray[1].getBar()).isEqualTo("bar1");
+    }
+
+    @Test
+    public void testRestClientGetObjectWithNoContentShouldReturnNull() throws Exception {
+        asyncServer.expect(requestTo("http://localhost/fooObject"))
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        try {
+            getResponse(fooClient.fooObject());
+            fail("Should get NOT FOUND");
+        } catch (ExecutionException executionException) {
+            assertThat(executionException).hasCauseExactlyInstanceOf(HttpClientErrorException.class);
+        }
     }
 
     @Test
     public void testRestClientGetAcceptHeader() throws Exception {
         asyncServer.expect(requestTo("http://localhost/some-id"))
-                .andExpect(method(HttpMethod.GET))
-                .andExpect(header(HttpHeaders.ACCEPT, "application/json"))
-                .andRespond(withSuccess());
+            .andExpect(method(HttpMethod.GET))
+            .andExpect(header(HttpHeaders.ACCEPT, "application/json"))
+            .andRespond(withSuccess());
 
         getResponse(fooClient.getFooWithAcceptHeader("some-id"));
     }
@@ -169,8 +172,8 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     @Test
     public void testRestClientPost() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withCreatedEntity(URI.create("http://some-url")));
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withCreatedEntity(URI.create("http://some-url")));
 
         getResponse(fooClient.bar("some-body"));
     }
@@ -178,14 +181,14 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     @Test
     public void testRestClientPostAsyncServerError() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.POST))
-                .andRespond(withServerError());
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withServerError());
 
         try {
             getResponse(fooClient.bar("some-body"));
             fail("Should have gotten Exception");
         } catch (ExecutionException executionException) {
-            assertTrue(executionException.getCause() instanceof HttpServerErrorException);
+            assertThat(executionException).hasCauseExactlyInstanceOf(HttpServerErrorException.class);
         }
     }
 
@@ -194,9 +197,9 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
         Foo foo = new Foo("bar");
 
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.POST))
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andRespond(withCreatedEntity(URI.create("http://some-url")));
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andRespond(withCreatedEntity(URI.create("http://some-url")));
 
         getResponse(fooClient.barWithContentType(foo));
     }
@@ -204,8 +207,8 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     @Test
     public void testRestClientPut() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.PUT))
-                .andRespond(withSuccess());
+            .andExpect(method(HttpMethod.PUT))
+            .andRespond(withSuccess());
 
         getResponse(fooClient.barPut("some-body"));
     }
@@ -213,8 +216,8 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     @Test
     public void testRestClientPatch() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.PATCH))
-                .andRespond(withSuccess());
+            .andExpect(method(HttpMethod.PATCH))
+            .andRespond(withSuccess());
 
         getResponse(fooClient.barPatch("some-body"));
     }
@@ -222,8 +225,8 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     @Test
     public void testRestClientDelete() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.DELETE))
-                .andRespond(withSuccess());
+            .andExpect(method(HttpMethod.DELETE))
+            .andRespond(withSuccess());
 
         getResponse(fooClient.barDelete("some-body"));
     }
@@ -231,14 +234,14 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     @Test
     public void testRestClientDoesNotRetryIfNotEnabled() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
 
         try {
             getResponse(fooClient.defaultFoo());
             fail("Should have gotten exception");
         } catch (ExecutionException executionException) {
-            assertTrue(executionException.getCause() instanceof HttpServerErrorException);
+            assertThat(executionException).hasCauseExactlyInstanceOf(HttpServerErrorException.class);
         }
     }
 
@@ -247,45 +250,40 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
         Foo foo = new Foo("bar");
 
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
 
-        Optional<Foo> optional = getResponse(fooClient.tryNonEmptyOptional());
-
-        assertThat(optional.isPresent(), is(true));
-        assertThat(optional.get(), is(foo));
+        assertThat(getResponse(fooClient.tryNonEmptyOptional())).hasValue(foo);
     }
 
     @Test
     public void testRestClientWithEmptyOptional() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withStatus(HttpStatus.NOT_FOUND));
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-        Optional<String> optional = getResponse(fooClient.tryEmptyOptional());
-
-        assertThat(optional.isPresent(), is(false));
+        assertThat(getResponse(fooClient.tryEmptyOptional())).isNotPresent();
     }
 
     @Test
     public void testRestClientWithRawData() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withSuccess("success".getBytes(), MediaType.APPLICATION_OCTET_STREAM));
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess("success".getBytes(), MediaType.APPLICATION_OCTET_STREAM));
 
         byte[] raw = getResponse(fooClient.raw());
 
-        assertThat(StringUtils.toEncodedString(raw, Charset.defaultCharset()), is("success"));
+        assertThat(StringUtils.toEncodedString(raw, Charset.defaultCharset())).isEqualTo("success");
     }
 
     @Test
     public void testRestClientWithHeaders() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.GET))
-                .andExpect(header("Some-Header", "some-value"))
-                .andExpect(header("User-Id", "userId"))
-                .andExpect(header("Password", "password"))
-                .andRespond(withSuccess());
+            .andExpect(method(HttpMethod.GET))
+            .andExpect(header("Some-Header", "some-value"))
+            .andExpect(header("User-Id", "userId"))
+            .andExpect(header("Password", "password"))
+            .andRespond(withSuccess());
 
         getResponse(fooClient.fooWithHeaders("userId", "password"));
     }
@@ -296,13 +294,13 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.add("someHeader", "someHeaderValue");
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect((method(HttpMethod.GET)))
-                .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
+            .andExpect((method(HttpMethod.GET)))
+            .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
 
         ResponseEntity<String> responseEntity = getResponse(fooClient.getEntity());
-        assertThat(responseEntity.getBody(), is(responseString));
-        assertThat(responseEntity.getHeaders().get("someHeader"), is(singletonList("someHeaderValue")));
-        assertThat(responseEntity.getStatusCode(), is(HttpStatus.OK));
+        assertThat(responseEntity.getBody()).isEqualTo(responseString);
+        assertThat(responseEntity.getHeaders().get("someHeader")).isEqualTo(singletonList("someHeaderValue"));
+        assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
     }
 
     @Test
@@ -311,12 +309,12 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.add("someHeader", "someHeaderValue");
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect((method(HttpMethod.GET)))
-                .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
+            .andExpect((method(HttpMethod.GET)))
+            .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
 
         HttpEntity<String> responseEntity = getResponse(fooClient.getHttpEntity());
-        assertThat(responseEntity.getBody(), is(responseString));
-        assertThat(responseEntity.getHeaders().get("someHeader"), is(singletonList("someHeaderValue")));
+        assertThat(responseEntity.getBody()).isEqualTo(responseString);
+        assertThat(responseEntity.getHeaders().get("someHeader")).isEqualTo(singletonList("someHeaderValue"));
     }
 
     interface AsyncFooClient {
@@ -360,7 +358,7 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
 
     }
 
-    protected <T> T getResponse(Future<T> future) throws Exception {
+    private <U> U getResponse(Future<U> future) throws Exception {
         return future.get(10, TimeUnit.SECONDS);
     }
 }

@@ -2,32 +2,21 @@ package se.svt.core.lib.utils.rest;
 
 import se.svt.core.lib.utils.rest.RestClientCompletableFutureAsyncTest.CompletableFutureAsyncFooClient;
 
-import org.junit.runner.RunWith;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ActiveProfiles("test")
-@SpringApplicationConfiguration(classes = RestClientCompletableFutureAsyncTest.TestConfiguration.class)
 public class RestClientCompletableFutureAsyncTest extends AbstractRestClientAsyncTest<CompletableFutureAsyncFooClient> {
 
     @Configuration
-    @EnableAutoConfiguration
     @EnableRestClients(basePackageClasses = CompletableFutureAsyncFooClient.class)
-    @Import(AbstractRestClientAsyncTest.TestConfiguration.class)
-    protected static class TestConfiguration {
+    protected static class TestConfiguration extends BaseTestConfiguration {
 
     }
 

@@ -3,12 +3,14 @@ package se.svt.core.lib.utils.rest;
 import se.svt.core.lib.utils.rest.support.MethodParameters;
 
 import lombok.NonNull;
+import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.core.MethodParameter;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.core.convert.ConversionService;
 import org.springframework.core.convert.TypeDescriptor;
-import org.springframework.core.convert.support.DefaultConversionService;
+import org.springframework.format.support.DefaultFormattingConversionService;
+import org.springframework.format.support.FormattingConversionService;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.RequestEntity;
@@ -38,11 +40,13 @@ class RestClientInterceptorHelper {
     private static final TypeDescriptor STRING_TYPE_DESCRIPTOR = TypeDescriptor.valueOf(String.class);
     private static final String DEFAULT_PATH = "/";
 
-    private final ConversionService conversionService = new DefaultConversionService();
-
     private final Method method;
     private final List<MethodParameter> methodParameters;
     private final Object[] arguments;
+
+    @Setter
+    @Accessors(fluent = true)
+    private FormattingConversionService conversionService = new DefaultFormattingConversionService();
 
     static RestClientInterceptorHelper from(MethodInvocation methodInvocation) {
         return new RestClientInterceptorHelper(methodInvocation);
@@ -98,16 +102,16 @@ class RestClientInterceptorHelper {
                         Object value = arguments[parameter.getParameterIndex()];
                         if (value instanceof Collection) {
                             return ((Collection<?>) value).stream()
-                                .map(element -> formatUriValue(TypeDescriptor.nested(parameter, 1), element))
+                                .map(element -> convertToString(TypeDescriptor.nested(parameter, 1), element))
                                 .collect(toList());
                         }
-                        return singletonList(formatUriValue(new TypeDescriptor(parameter), value));
+                        return singletonList(convertToString(new TypeDescriptor(parameter), value));
                     })));
         }
         return new LinkedMultiValueMap<>();
     }
 
-    private String formatUriValue(TypeDescriptor sourceType, Object value) {
+    private String convertToString(TypeDescriptor sourceType, Object value) {
         if (value == null) {
             return null;
         } else if (value instanceof String) {
@@ -155,15 +159,14 @@ class RestClientInterceptorHelper {
             .forEach(header -> builder.header(substringBefore(header, ":"), substringAfter(header, ":")));
     }
 
-    private static void paramHeaders(List<MethodParameter> parameters, Object[] arguments, BodyBuilder builder) {
+    private void paramHeaders(List<MethodParameter> parameters, Object[] arguments, BodyBuilder builder) {
         if (isNotEmpty(parameters)) {
             parameters.stream()
                 .filter(parameter -> parameter.hasParameterAnnotation(RequestHeader.class))
                 .forEach(
-                    parameter ->
-                        builder.header(
-                            ((RequestHeader) parameter.getParameterAnnotations()[0]).value(),
-                            arguments[parameter.getParameterIndex()].toString()));
+                    parameter -> builder.header(
+                        ((RequestHeader) parameter.getParameterAnnotations()[0]).value(),
+                        convertToString(new TypeDescriptor(parameter), arguments[parameter.getParameterIndex()])));
         }
     }
 

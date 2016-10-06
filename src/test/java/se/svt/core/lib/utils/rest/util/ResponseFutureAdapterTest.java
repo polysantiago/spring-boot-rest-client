@@ -3,29 +3,30 @@ package se.svt.core.lib.utils.rest.util;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.util.concurrent.SettableListenableFuture;
 
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ResponseFutureAdapterTest {
 
-    private ResponseFutureAdapter<String> responseFutureWrapper;
-    private SettableListenableFuture<ResponseEntity<String>> wrappedFuture;
+    @Mock
     private ResponseEntity<String> responseEntity;
+
+    @Mock
     private ListenableFutureCallback<String> callback;
+
+    private SettableListenableFuture<ResponseEntity<String>> wrappedFuture = new SettableListenableFuture<>();
 
     @Before
     public void setUp() {
-        wrappedFuture = new SettableListenableFuture<>();
-        responseEntity = mock(ResponseEntity.class);
-        callback = mock(ListenableFutureCallback.class);
-
-        responseFutureWrapper = new ResponseFutureAdapter(wrappedFuture);
+        ResponseFutureAdapter<String> responseFutureWrapper = new ResponseFutureAdapter<>(wrappedFuture);
         responseFutureWrapper.addCallback(callback);
     }
 

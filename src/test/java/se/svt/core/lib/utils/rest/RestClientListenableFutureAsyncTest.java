@@ -3,14 +3,9 @@ package se.svt.core.lib.utils.rest;
 import se.svt.core.lib.utils.rest.RestClientListenableFutureAsyncTest.ListenableFutureAsyncFooClient;
 
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.SpringApplicationConfiguration;
+import org.mockito.Mock;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.*;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.bind.annotation.*;
@@ -23,19 +18,16 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ActiveProfiles("test")
-@SpringApplicationConfiguration(classes = RestClientListenableFutureAsyncTest.TestConfiguration.class)
 public class RestClientListenableFutureAsyncTest extends AbstractRestClientAsyncTest<ListenableFutureAsyncFooClient> {
 
-
     @Configuration
-    @EnableAutoConfiguration
     @EnableRestClients(basePackageClasses = ListenableFutureAsyncFooClient.class)
-    @Import(AbstractRestClientAsyncTest.TestConfiguration.class)
-    protected static class TestConfiguration {
+    protected static class TestConfiguration extends BaseTestConfiguration {
 
     }
+
+    @Mock
+    private ListenableFutureCallback<Optional<String>> callback;
 
     @RestClient(value = "localhost", url = "${localhost.uri}")
     interface ListenableFutureAsyncFooClient extends AbstractRestClientAsyncTest.AsyncFooClient {
@@ -118,9 +110,8 @@ public class RestClientListenableFutureAsyncTest extends AbstractRestClientAsync
     @Test
     public void testRestClientWithEmptyOptionalAndCallback() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
-                .andExpect(method(HttpMethod.GET))
-                .andRespond(withStatus(HttpStatus.NOT_FOUND));
-        ListenableFutureCallback<Optional<String>> callback = mock(ListenableFutureCallback.class);
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
         fooClient.tryEmptyOptional().addCallback(callback);
 

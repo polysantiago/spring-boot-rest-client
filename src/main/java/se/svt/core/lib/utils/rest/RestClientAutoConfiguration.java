@@ -2,35 +2,40 @@ package se.svt.core.lib.utils.rest;
 
 import se.svt.core.lib.utils.rest.retry.RetryInterceptor;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.web.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.format.FormatterRegistry;
+import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.retry.annotation.RetryConfiguration;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import java.util.List;
 
 @Configuration
 @EnableConfigurationProperties(RestClientProperties.class)
 @AutoConfigureAfter(WebMvcAutoConfiguration.class)
+@RequiredArgsConstructor
 public class RestClientAutoConfiguration {
 
-    @Autowired(required = false)
-    private List<RestClientSpecification> specifications;
+    private final List<RestClientSpecification> specifications;
 
     @Bean
     @ConditionalOnMissingBean
-    public RestTemplate restClientTemplate() {
-        return new RestTemplate();
+    public RestTemplate restClientTemplate(RestTemplateBuilder builder) {
+        return builder.build();
     }
 
     @Bean
@@ -40,6 +45,18 @@ public class RestClientAutoConfiguration {
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
         requestFactory.setTaskExecutor(new SimpleAsyncTaskExecutor());
         return new AsyncRestTemplate(requestFactory, restTemplate);
+    }
+
+    @Bean
+    public WebMvcConfigurer restClientWebMvcConfigurer(RestClientProperties properties) {
+        return new WebMvcConfigurerAdapter() {
+            @Override
+            public void addFormatters(FormatterRegistry registry) {
+                DateTimeFormatterRegistrar dateTimeFormatterRegistrar = new DateTimeFormatterRegistrar();
+                dateTimeFormatterRegistrar.setUseIsoFormat(properties.getIsoDateTimeFormat());
+                dateTimeFormatterRegistrar.registerFormatters(registry);
+            }
+        };
     }
 
     @Configuration

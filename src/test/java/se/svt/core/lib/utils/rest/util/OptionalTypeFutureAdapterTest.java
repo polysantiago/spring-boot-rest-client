@@ -3,6 +3,7 @@ package se.svt.core.lib.utils.rest.util;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,26 +14,23 @@ import org.springframework.web.client.HttpClientErrorException;
 import java.util.Optional;
 
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 
 @RunWith(MockitoJUnitRunner.class)
 public class OptionalTypeFutureAdapterTest {
 
-    private OptionalTypeFutureAdapter listenableFutureWrapper;
-
-    private SettableListenableFuture<ResponseEntity<Optional<String>>> wrappedFuture;
+    @Mock
     private ResponseEntity<Optional<String>> responseEntity;
+
+    @Mock
     private ListenableFutureCallback<Optional<String>> callback;
+
+    private SettableListenableFuture<ResponseEntity<Optional<String>>> wrappedFuture = new SettableListenableFuture<>();
 
     @Before
     public void setUp() {
-        wrappedFuture = new SettableListenableFuture<>();
-        responseEntity = mock(ResponseEntity.class);
-        callback = mock(ListenableFutureCallback.class);
-
-        listenableFutureWrapper = new OptionalTypeFutureAdapter(wrappedFuture);
+        OptionalTypeFutureAdapter<Optional<String>> listenableFutureWrapper = new OptionalTypeFutureAdapter<>(wrappedFuture);
         listenableFutureWrapper.addCallback(callback);
     }
 

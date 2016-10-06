@@ -7,6 +7,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.format.support.FormattingConversionService;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -38,6 +39,7 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         RestTemplate restTemplate = applicationContext.getBean(RestTemplate.class);
         AsyncRestTemplate asyncRestTemplate = applicationContext.getBean(AsyncRestTemplate.class);
         RestClientContext context = applicationContext.getBean(RestClientContext.class);
+        FormattingConversionService conversionService = applicationContext.getBean(FormattingConversionService.class);
 
         RestClientSpecification specification = context.findByRestClientName(name);
 
@@ -47,7 +49,10 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         SyncRequestHelper syncRequestHelper = new SyncRequestHelper(specification, restTemplate);
         AsyncRequestHelper asyncRequestHelper = new AsyncRequestHelper(asyncRestTemplate);
 
-        RestClientInterceptor interceptor = new RestClientInterceptor(syncRequestHelper, asyncRequestHelper,
+        RestClientInterceptor interceptor = new RestClientInterceptor(
+            syncRequestHelper,
+            asyncRequestHelper,
+            conversionService,
             getServiceUrl(context));
 
         retryInterceptor().ifPresent(retryOperationsInterceptor -> {
