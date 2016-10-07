@@ -125,6 +125,8 @@ public class RestClientTest {
         @RequestMapping
         HttpEntity<String> getHttpEntity();
 
+        @RequestMapping(value = "/{id}")
+        <T> T getParameterized(@PathVariable("id") String id, Class<T> type);
 
     }
 
@@ -136,6 +138,19 @@ public class RestClientTest {
     @After
     public void tearDown() throws Exception {
         server.verify();
+    }
+
+    @Test
+    public void testGetParameterized() throws Exception {
+        Foo foo = new Foo("bar");
+
+        server.expect(requestTo("http://localhost/some-id"))
+              .andExpect(method(HttpMethod.GET))
+              .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
+
+        Foo response = fooClient.getParameterized("some-id", Foo.class);
+
+        assertThat(response).isEqualTo(foo);
     }
 
     @Test

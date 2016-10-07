@@ -7,6 +7,8 @@ import se.svt.core.lib.utils.rest.util.MethodUtils;
 
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.core.GenericTypeResolver;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
@@ -30,11 +32,11 @@ class SyncRequestHelper {
     @Setter
     private boolean retryEnabled;
 
-    Object executeRequest(Method method, RequestEntity<Object> requestEntity) {
+    Object executeRequest(MethodInvocation invocation, RequestEntity<Object> requestEntity) {
         try {
-            return executeRequestInternal(method, requestEntity);
+            return executeRequestInternal(invocation, requestEntity);
         } catch (HttpStatusCodeException ex) {
-            return handleHttpStatusCodeException(method, ex);
+            return handleHttpStatusCodeException(invocation.getMethod(), ex);
         } catch (RuntimeException ex) {
             throw handleRuntimeException(ex);
         }
@@ -58,14 +60,16 @@ class SyncRequestHelper {
         throw ex;
     }
 
-    private Object executeRequestInternal(Method method, RequestEntity<Object> requestEntity) {
+    private Object executeRequestInternal(MethodInvocation invocation, RequestEntity<Object> requestEntity) {
+        Method method = invocation.getMethod();
         if (MethodUtils.returnTypeIsAnyOf(method, HttpEntity.class, ResponseEntity.class)) {
             return exchangeForResponseEntity(method, requestEntity);
         } else if (MethodUtils.returnTypeIsGeneric(method)) {
             SyntheticParametrizedTypeReference<?> responseType = SyntheticParametrizedTypeReference.fromMethodReturnType(method);
             return extractBodyNullSafe(restTemplate.exchange(requestEntity, responseType));
         }
-        return extractBodyNullSafe(restTemplate.exchange(requestEntity, method.getReturnType()));
+        Class<?> returnType = GenericTypeResolver.resolveReturnTypeForGenericMethod(method, invocation.getArguments(), null);
+        return extractBodyNullSafe(restTemplate.exchange(requestEntity, returnType));
     }
 
     private ResponseEntity<?> exchangeForResponseEntity(Method method, RequestEntity<Object> requestEntity) {
