@@ -41,7 +41,7 @@ class RestClientInterceptor implements MethodInterceptor {
         if (MethodUtils.returnTypeIs(method, CompletableFuture.class)) {
             return toCompletableFuture(asyncRequestHelper.executeAsyncRequest(method, requestEntity));
         }
-        return syncRequestHelper.executeRequest(method, requestEntity);
+        return syncRequestHelper.executeRequest(methodInvocation, requestEntity);
     }
 
 }
