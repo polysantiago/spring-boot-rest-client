@@ -179,6 +179,16 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     }
 
     @Test
+    public void testRestClientPostForLocation() throws Exception {
+        URI location = URI.create("http://some-url");
+        asyncServer.expect(requestTo("http://localhost/postForLocation"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withCreatedEntity(location));
+
+        assertThat(getResponse(fooClient.postForLocation("some-body"))).isEqualTo(location);
+    }
+
+    @Test
     public void testRestClientPostAsyncServerError() throws Exception {
         asyncServer.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.POST))
@@ -355,6 +365,8 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
         Future<ResponseEntity<String>> getEntity();
 
         Future<HttpEntity<String>> getHttpEntity();
+
+        Future<URI> postForLocation(String body);
 
     }
 

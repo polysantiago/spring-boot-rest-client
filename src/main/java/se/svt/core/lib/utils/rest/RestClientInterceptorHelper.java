@@ -7,7 +7,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.core.MethodParameter;
-import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.format.support.FormattingConversionService;
@@ -59,7 +59,7 @@ class RestClientInterceptorHelper {
     }
 
     RequestEntity<Object> buildRequest(URI serviceUrl) {
-        RequestMapping request = AnnotationUtils.findAnnotation(method, RequestMapping.class);
+        RequestMapping request = AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
 
         // Uri
         URI uri = UriComponentsBuilder.fromUri(serviceUrl)
