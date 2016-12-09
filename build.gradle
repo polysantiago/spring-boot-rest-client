@@ -80,7 +80,6 @@ dependencies {
     // end::utils[]
 
     compile('net.javacrumbs.future-converter:future-converter-spring-java8:0.3.0')
-    compile('org.apache.logging.log4j:log4j-api:2.6.2')
 
     testCompile("org.springframework.boot:spring-boot-starter-test")
     testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
