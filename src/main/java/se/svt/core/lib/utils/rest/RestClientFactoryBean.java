@@ -22,6 +22,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 @Setter
 class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, ApplicationContextAware {
 
+    private static final String PREFERRED_CONVERSION_SERVICE = "mvcConversionService";
     private final ClassLoader classLoader = ClassUtils.getDefaultClassLoader();
 
     private String name;
@@ -39,9 +40,9 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         RestTemplate restTemplate = applicationContext.getBean(RestTemplate.class);
         AsyncRestTemplate asyncRestTemplate = applicationContext.getBean(AsyncRestTemplate.class);
         RestClientContext context = applicationContext.getBean(RestClientContext.class);
-        FormattingConversionService conversionService = applicationContext.getBean(FormattingConversionService.class);
 
         RestClientSpecification specification = context.findByRestClientName(name);
+        FormattingConversionService conversionService = getConversionService();
 
         ProxyFactory proxyFactory = new ProxyFactory();
         proxyFactory.addInterface(type);
@@ -63,6 +64,14 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         proxyFactory.addAdvice(interceptor);
 
         return proxyFactory.getProxy(classLoader);
+    }
+
+    private FormattingConversionService getConversionService() {
+        if (applicationContext.containsBean(PREFERRED_CONVERSION_SERVICE)
+            && applicationContext.isTypeMatch(PREFERRED_CONVERSION_SERVICE, FormattingConversionService.class)) {
+            return applicationContext.getBean(PREFERRED_CONVERSION_SERVICE, FormattingConversionService.class);
+        }
+        return applicationContext.getBean(FormattingConversionService.class);
     }
 
     private URI getServiceUrl(RestClientContext context) {
