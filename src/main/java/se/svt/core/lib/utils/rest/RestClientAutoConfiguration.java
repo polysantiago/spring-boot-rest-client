@@ -26,6 +26,7 @@ import java.util.List;
 
 @Configuration
 @EnableConfigurationProperties(RestClientProperties.class)
+@ConditionalOnBean(annotation = { EnableRestClients.class })
 @AutoConfigureAfter(WebMvcAutoConfiguration.class)
 @RequiredArgsConstructor
 public class RestClientAutoConfiguration {
