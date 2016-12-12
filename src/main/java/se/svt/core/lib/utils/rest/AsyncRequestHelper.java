@@ -2,9 +2,7 @@ package se.svt.core.lib.utils.rest;
 
 
 import se.svt.core.lib.utils.rest.support.SyntheticParametrizedTypeReference;
-import se.svt.core.lib.utils.rest.util.OptionalTypeFutureAdapter;
-import se.svt.core.lib.utils.rest.util.ResponseFutureAdapter;
-import se.svt.core.lib.utils.rest.util.TypeUtils;
+import se.svt.core.lib.utils.rest.util.*;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpEntity;
@@ -14,6 +12,7 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.client.AsyncRestTemplate;
 
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.Optional;
 
 import static se.svt.core.lib.utils.rest.support.SyntheticParametrizedTypeReference.fromMethodReturnType;
@@ -30,6 +29,10 @@ class AsyncRequestHelper {
             return sendAsyncRequest(requestEntity, responseType);
         }
         ListenableFuture<? extends ResponseEntity<?>> listenableFuture = sendAsyncRequest(requestEntity, wrappedReturnType);
+        if (MethodUtils.hasAnnotation(method, PostForLocation.class)) {
+            checkWrappedReturnTypeIsUri(wrappedReturnType);
+            return createLocationFutureAdapter(listenableFuture);
+        }
         if (TypeUtils.typeIs(wrappedReturnType, Optional.class)) {
             return createOptionalTypeAdapter(listenableFuture);
         }
@@ -39,6 +42,17 @@ class AsyncRequestHelper {
     private ListenableFuture<? extends ResponseEntity<?>> sendAsyncRequest(RequestEntity<Object> requestEntity,
                                                                            SyntheticParametrizedTypeReference<?> responseType) {
         return asyncRestTemplate.exchange(requestEntity.getUrl(), requestEntity.getMethod(), requestEntity, responseType);
+    }
+
+    private static void checkWrappedReturnTypeIsUri(SyntheticParametrizedTypeReference<?> wrappedReturnType) {
+        if (!TypeUtils.typeIs(wrappedReturnType, URI.class)) {
+            throw new RuntimeException("Method annotated with @PostForLocation must return URI");
+        }
+    }
+
+    private static LocationFutureAdapter createLocationFutureAdapter(ListenableFuture<? extends ResponseEntity<?>>
+                                                                         listenableFuture) {
+        return new LocationFutureAdapter(((ListenableFuture<ResponseEntity<Object>>) listenableFuture));
     }
 
     @SuppressWarnings("unchecked")

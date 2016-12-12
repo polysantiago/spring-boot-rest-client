@@ -17,6 +17,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.lang.reflect.Method;
+import java.net.URI;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -62,6 +63,9 @@ class SyncRequestHelper {
 
     private Object executeRequestInternal(MethodInvocation invocation, RequestEntity<Object> requestEntity) {
         Method method = invocation.getMethod();
+        if (MethodUtils.hasAnnotation(method, PostForLocation.class)) {
+            return postForLocation(requestEntity, method);
+        }
         if (MethodUtils.returnTypeIsAnyOf(method, HttpEntity.class, ResponseEntity.class)) {
             return exchangeForResponseEntity(method, requestEntity);
         } else if (MethodUtils.returnTypeIsGeneric(method)) {
@@ -70,6 +74,13 @@ class SyncRequestHelper {
         }
         Class<?> returnType = GenericTypeResolver.resolveReturnTypeForGenericMethod(method, invocation.getArguments(), null);
         return extractBodyNullSafe(restTemplate.exchange(requestEntity, returnType));
+    }
+
+    private URI postForLocation(RequestEntity<Object> requestEntity, Method method) {
+        if (!MethodUtils.returnTypeIs(method, URI.class)) {
+            throw new RuntimeException("Method annotated with @PostForLocation must return URI");
+        }
+        return restTemplate.exchange(requestEntity, Object.class).getHeaders().getLocation();
     }
 
     private ResponseEntity<?> exchangeForResponseEntity(Method method, RequestEntity<Object> requestEntity) {

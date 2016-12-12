@@ -2,6 +2,7 @@ package se.svt.core.lib.utils.rest.util;
 
 import lombok.experimental.UtilityClass;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
@@ -22,5 +23,9 @@ public class MethodUtils {
     public static boolean returnTypeIsAnyOf(Method method, Class<?>... returnTypes) {
         Class<?> clazz = ClassTypeInformation.fromReturnTypeOf(method).getType();
         return Arrays.stream(returnTypes).anyMatch(returnType -> Objects.equals(returnType, clazz));
+    }
+
+    public static boolean hasAnnotation(Method method, Class<? extends Annotation> annotation) {
+        return method.getDeclaredAnnotation(annotation) != null;
     }
 }

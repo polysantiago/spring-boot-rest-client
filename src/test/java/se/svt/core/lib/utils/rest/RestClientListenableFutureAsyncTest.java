@@ -10,6 +10,7 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 
@@ -104,6 +105,10 @@ public class RestClientListenableFutureAsyncTest extends AbstractRestClientAsync
         @Override
         @RequestMapping
         ListenableFuture<HttpEntity<String>> getHttpEntity();
+
+        @Override
+        @PostForLocation(value = "/postForLocation")
+        ListenableFuture<URI> postForLocation(String body);
 
     }
 

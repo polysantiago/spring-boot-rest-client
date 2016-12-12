@@ -62,71 +62,74 @@ public class RestClientTest {
     @RestClient(value = "localhost", url = "${localhost.uri}")
     interface FooClient {
 
-        @RequestMapping
+        @GetMapping
         String defaultFoo();
 
-        @RequestMapping(value = "/{id}")
+        @GetMapping(value = "/{id}")
         String foo(@PathVariable("id") String id, @RequestParam("query") String query);
 
-        @RequestMapping(value = "/foo/{id}")
+        @GetMapping(value = "/foo/{id}")
         Foo getFoo(@PathVariable("id") String id);
 
-        @RequestMapping(value = "/fooList", method = RequestMethod.GET)
+        @GetMapping(value = "/fooList")
         List<Foo> fooList();
 
-        @RequestMapping(value = "/fooListParams", method = RequestMethod.GET)
+        @GetMapping(value = "/fooListParams")
         Void fooListArgument(@RequestParam("myList") List<String> params);
 
-        @RequestMapping(value = "/fooArray", method = RequestMethod.GET)
+        @GetMapping(value = "/fooArray")
         Foo[] fooArray();
 
-        @RequestMapping(value = "/fooObject", method = RequestMethod.GET)
+        @GetMapping(value = "/fooObject")
         Object fooObject();
 
-        @RequestMapping(value = "/{id}", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
+        @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
         Foo getFooWithAcceptHeader(@PathVariable("id") String id);
 
-        @RequestMapping(value = "/", method = RequestMethod.POST)
+        @PostMapping(value = "/")
         Void bar(String body);
 
-        @RequestMapping(value = "/", method = RequestMethod.POST, consumes = MediaType.APPLICATION_JSON_VALUE)
+        @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_VALUE)
         Void barWithContentType(Foo foo);
 
-        @RequestMapping(value = "/")
+        @GetMapping(value = "/")
         Void batWithObjectAsParameters(
             @RequestHeader("header") Foo foo1,
             @RequestParam("date") LocalDate date,
             @RequestParam("obj") Foo foo2);
 
-        @RequestMapping(method = RequestMethod.PUT)
+        @PutMapping
         Void barPut(String body);
 
-        @RequestMapping(method = RequestMethod.PATCH)
+        @PatchMapping
         Void barPatch(String body);
 
-        @RequestMapping(method = RequestMethod.DELETE)
+        @DeleteMapping
         Void barDelete(String body);
 
-        @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+        @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
         Optional<Foo> tryNonEmptyOptional();
 
-        @RequestMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+        @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
         Optional<String> tryEmptyOptional();
 
-        @RequestMapping(produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+        @GetMapping(produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
         byte[] raw();
 
-        @RequestMapping(headers = "Some-Header:some-value")
+        @GetMapping(headers = "Some-Header:some-value")
         Void fooWithHeaders(@RequestHeader("User-Id") String userId, @RequestHeader("Password") String password);
 
-        @RequestMapping
+        @GetMapping
         ResponseEntity<String> getEntity();
 
-        @RequestMapping
+        @GetMapping
         HttpEntity<String> getHttpEntity();
 
-        @RequestMapping(value = "/{id}")
+        @GetMapping(value = "/{id}")
         <T> T getParameterized(@PathVariable("id") String id, Class<T> type);
+
+        @PostForLocation(value = "/postForLocation")
+        URI postForLocation(String body);
 
     }
 
@@ -264,6 +267,25 @@ public class RestClientTest {
     }
 
     @Test
+    public void testRestClientPostForLocation() throws Exception {
+        URI location = URI.create("http://some-url");
+        server.expect(requestTo("http://localhost/postForLocation"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withCreatedEntity(location));
+
+        assertThat(fooClient.postForLocation("some-body")).isEqualTo(location);
+    }
+
+    @Test(expected = HttpServerErrorException.class)
+    public void testRestClientPostForLocationFailure() throws Exception {
+        server.expect(requestTo("http://localhost/postForLocation"))
+            .andExpect(method(HttpMethod.POST))
+            .andRespond(withServerError());
+
+        fooClient.postForLocation("some-body");
+    }
+
+    @Test
     public void testRestClientPostWithContentType() throws Exception {
         Foo foo = new Foo("bar");
 
@@ -385,6 +407,16 @@ public class RestClientTest {
         assertThat(responseEntity.getBody()).isEqualTo(responseString);
         assertThat(responseEntity.getHeaders().get("someHeader")).isEqualTo(singletonList("someHeaderValue"));
         assertThat(responseEntity.getStatusCode()).isEqualTo(HttpStatus.OK);
+    }
+
+    @Test(expected = HttpServerErrorException.class)
+    public void testGetEntityFailure() throws Exception {
+        String responseString = "ERROR";
+        server.expect(requestTo("http://localhost/"))
+            .andExpect((method(HttpMethod.GET)))
+            .andRespond(withServerError().body(responseString));
+
+        fooClient.getEntity();
     }
 
     @Test
