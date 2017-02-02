@@ -145,14 +145,35 @@ class RestClientInterceptorHelper {
     }
 
     private static Object body(List<MethodParameter> parameters, Object[] arguments) {
+        // Get argument for first parameter annotated with RequestBody,
+        // or if non found, argument for first non-annotated parameter
         if (isNotEmpty(parameters)) {
-            return parameters.stream()
-                .filter(parameter -> !parameter.hasParameterAnnotations())
-                .map(parameter -> arguments[parameter.getParameterIndex()])
-                .findAny().orElse(null);
+            Object body = getAnnotatedBody(parameters, arguments);
+            if (body != null) {
+                return body;
+            }
+            return getNonAnnotatedParameterValue(parameters, arguments);
         }
         return null;
     }
+
+    private static Object getAnnotatedBody(List<MethodParameter> parameters, Object[] arguments) {
+        return parameters.stream()
+            .filter((methodParameter) -> methodParameter.hasParameterAnnotation(RequestBody.class))
+            .findFirst()
+            .map(parameter -> arguments[parameter.getParameterIndex()])
+            .orElse(null);
+    }
+
+    private static Object getNonAnnotatedParameterValue(List<MethodParameter> parameters,
+                                                        Object[] arguments) {
+        return parameters.stream()
+            .filter(parameter -> !parameter.hasParameterAnnotations())
+            .findFirst()
+            .map(parameter -> arguments[parameter.getParameterIndex()])
+            .orElse(null);
+    }
+
 
     private static void requestHeaders(String[] headers, BodyBuilder builder) {
         Stream.of(headers)
