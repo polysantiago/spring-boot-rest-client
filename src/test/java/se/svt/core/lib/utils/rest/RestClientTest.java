@@ -466,7 +466,6 @@ public class RestClientTest {
     public void testGetWithMixedParameters() throws Exception {
         UUID flowId = UUID.randomUUID();
         String id = "THeId";
-        //String body = "BIDY";
         String response = "TheResponse";
         server.expect(requestTo("http://localhost/" + id))
             .andExpect(method(HttpMethod.GET))
