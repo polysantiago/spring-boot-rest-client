@@ -50,6 +50,7 @@ class AsyncRequestHelper {
         }
     }
 
+    @SuppressWarnings("unchecked")
     private static LocationFutureAdapter createLocationFutureAdapter(ListenableFuture<? extends ResponseEntity<?>>
                                                                          listenableFuture) {
         return new LocationFutureAdapter(((ListenableFuture<ResponseEntity<Object>>) listenableFuture));

@@ -26,6 +26,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static com.google.common.collect.Lists.newArrayListWithCapacity;
@@ -86,6 +87,9 @@ public class RestClientTest {
         @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
         Foo getFooWithAcceptHeader(@PathVariable("id") String id);
 
+        @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_ATOM_XML_VALUE)
+        String getFooWithAcceptAtom(@PathVariable("id") String id);
+
         @PostMapping(value = "/")
         Void bar(String body);
 
@@ -97,6 +101,7 @@ public class RestClientTest {
             @RequestHeader("header") Foo foo1,
             @RequestParam("date") LocalDate date,
             @RequestParam("obj") Foo foo2);
+
 
         @PutMapping
         Void barPut(String body);
@@ -131,6 +136,20 @@ public class RestClientTest {
         @PostForLocation(value = "/postForLocation")
         URI postForLocation(String body);
 
+        @GetMapping("/{id}")
+        String barWithMixedParameters(@PathVariable("id") String id,
+                                      @RequestHeader("Flow-Id") UUID flowId);
+
+
+        @PostMapping("/{id}")
+        String barWithMixedParametersAndBody(@PathVariable("id") String id,
+                                             @RequestHeader("Flow-Id") UUID flowId,
+                                             String body);
+
+        @PostMapping("/{id}")
+        String barWithMixedParametersAndAnnotatedBody(@PathVariable("id") String id,
+                                                      @RequestHeader("Flow-Id") UUID flowId,
+                                                      @RequestBody String body);
     }
 
     @Before
@@ -255,6 +274,16 @@ public class RestClientTest {
             .andRespond(withSuccess());
 
         fooClient.getFooWithAcceptHeader("some-id");
+    }
+
+    @Test
+    public void testRestClientGetAcceptAtom() throws Exception {
+        server.expect(requestTo("http://localhost/some-id"))
+            .andExpect(method(HttpMethod.GET))
+            .andExpect(header(HttpHeaders.ACCEPT, "application/atom+xml"))
+            .andRespond(withSuccess());
+
+        fooClient.getFooWithAcceptAtom("some-id");
     }
 
     @Test
@@ -431,5 +460,48 @@ public class RestClientTest {
         HttpEntity<String> responseEntity = fooClient.getHttpEntity();
         assertThat(responseEntity.getBody()).isEqualTo(responseString);
         assertThat(responseEntity.getHeaders().get("someHeader")).isEqualTo(singletonList("someHeaderValue"));
+    }
+
+    @Test
+    public void testGetWithMixedParameters() throws Exception {
+        UUID flowId = UUID.randomUUID();
+        String id = "THeId";
+        String response = "TheResponse";
+        server.expect(requestTo("http://localhost/" + id))
+            .andExpect(method(HttpMethod.GET))
+            .andExpect(header("Flow-Id", flowId.toString()))
+            .andRespond(withSuccess(response, MediaType.TEXT_PLAIN));
+
+        assertThat(fooClient.barWithMixedParameters(id, flowId)).isEqualTo(response);
+    }
+
+    @Test
+    public void testPostWithMixedParametersAndBody() throws Exception {
+        UUID flowId = UUID.randomUUID();
+        String id = "THeId";
+        String body = "BIDY";
+        String response = "TheResponse";
+        server.expect(requestTo("http://localhost/" + id))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().string(body))
+            .andExpect(header("Flow-Id", flowId.toString()))
+            .andRespond(withSuccess(response, MediaType.TEXT_PLAIN));
+
+        assertThat(fooClient.barWithMixedParametersAndBody(id, flowId, body)).isEqualTo(response);
+    }
+
+    @Test
+    public void testPostWithMixedParametersAndAnnotatedBody() throws Exception {
+        UUID flowId = UUID.randomUUID();
+        String id = "THeId";
+        String body = "BIDY";
+        String response = "TheResponse";
+        server.expect(requestTo("http://localhost/" + id))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().string(body))
+            .andExpect(header("Flow-Id", flowId.toString()))
+            .andRespond(withSuccess(response, MediaType.TEXT_PLAIN));
+
+        assertThat(fooClient.barWithMixedParametersAndAnnotatedBody(id, flowId, body)).isEqualTo(response);
     }
 }
