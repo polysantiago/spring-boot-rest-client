@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        springBootVersion = '1.4.1.RELEASE'
+        springBootVersion = '1.5.1.RELEASE'
     }
     repositories {
         jcenter()
@@ -14,17 +14,24 @@ buildscript {
     }
 }
 
-apply plugin: 'java'
-apply plugin: 'idea'
-apply plugin: 'spring-boot'
-apply plugin: 'maven-publish'
+plugins {
+    id 'java'
+    id 'idea'
+    id 'org.springframework.boot' version '1.5.1.RELEASE'
+    id 'maven-publish'
+    id 'pl.allegro.tech.build.axion-release' version '1.5.0'
+}
+
 apply plugin: 'propdeps'
 apply plugin: 'propdeps-maven'
 apply plugin: 'propdeps-idea'
 
+
+
 group = "se.svt.core.lib.utils.rest"
 description = "Core Systems - Rest Client"
-version = '1.2.3'
+
+project.version = scmVersion.version
 
 idea {
     project {
@@ -42,13 +49,7 @@ tasks.withType(JavaCompile) {
 }
 
 repositories {
-    mavenLocal()
-    maven { url "http://nexus.svt.se/content/repositories/public" }
-    maven { url 'http://repo.spring.io/milestone' }
-    maven { url "https://repo.spring.io/libs-release" }
-    maven { url "http://repo.spring.io/plugins-release" }
     mavenCentral()
-    maven { url "http://repo.maven.apache.org/maven2" }
     jcenter()
     maven {
         url "https://svtrepo.artifactoryonline.com/svtrepo/repo"
