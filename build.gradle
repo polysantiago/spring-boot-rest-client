@@ -158,6 +158,8 @@ publishing {
     }
 }
 
+publish.dependsOn check
+
 test {
     testLogging {
         exceptionFormat = 'full'
