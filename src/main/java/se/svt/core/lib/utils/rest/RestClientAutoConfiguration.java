@@ -1,7 +1,5 @@
 package se.svt.core.lib.utils.rest;
 
-import se.svt.core.lib.utils.rest.retry.RetryInterceptor;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -21,6 +19,7 @@ import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
+import se.svt.core.lib.utils.rest.retry.RetryInterceptor;
 
 import java.util.List;
 

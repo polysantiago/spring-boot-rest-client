@@ -7,14 +7,14 @@ import org.springframework.util.concurrent.ListenableFutureAdapter;
 import java.net.URI;
 import java.util.concurrent.ExecutionException;
 
-public class LocationFutureAdapter extends ListenableFutureAdapter<URI, ResponseEntity<Object>> {
+public class LocationFutureAdapter<T> extends ListenableFutureAdapter<URI, ResponseEntity<T>> {
 
-    public LocationFutureAdapter(ListenableFuture<ResponseEntity<Object>> adaptee) {
+    public LocationFutureAdapter(ListenableFuture<ResponseEntity<T>> adaptee) {
         super(adaptee);
     }
 
     @Override
-    protected URI adapt(ResponseEntity<Object> adapteeResult) throws ExecutionException {
+    protected URI adapt(ResponseEntity<T> adapteeResult) throws ExecutionException {
         return adapteeResult.getHeaders().getLocation();
     }
 }

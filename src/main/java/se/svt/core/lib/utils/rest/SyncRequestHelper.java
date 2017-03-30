@@ -1,20 +1,21 @@
 package se.svt.core.lib.utils.rest;
 
 
-import se.svt.core.lib.utils.rest.retry.RetryableException;
-import se.svt.core.lib.utils.rest.support.SyntheticParametrizedTypeReference;
-import se.svt.core.lib.utils.rest.util.MethodUtils;
-
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.core.GenericTypeResolver;
+import org.springframework.core.ResolvableType;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import se.svt.core.lib.utils.rest.retry.RetryableException;
+import se.svt.core.lib.utils.rest.support.SyntheticParametrizedTypeReference;
+import se.svt.core.lib.utils.rest.util.ResolvableTypeUtils;
 
 import java.lang.reflect.Method;
 import java.net.URI;
@@ -52,7 +53,7 @@ class SyncRequestHelper {
 
     private Object handleHttpStatusCodeException(Method method, HttpStatusCodeException ex) {
         HttpStatus statusCode = ex.getStatusCode();
-        if (MethodUtils.returnTypeIs(method, Optional.class) && statusCode.equals(HttpStatus.NOT_FOUND)) {
+        if (ResolvableTypeUtils.returnTypeIs(method, Optional.class) && statusCode.equals(HttpStatus.NOT_FOUND)) {
             return Optional.empty();
         }
         if (retryEnabled && anyMatch(specification.getRetryableStatuses(), statusCode::equals)) {
@@ -63,30 +64,34 @@ class SyncRequestHelper {
 
     private Object executeRequestInternal(MethodInvocation invocation, RequestEntity<Object> requestEntity) {
         Method method = invocation.getMethod();
-        if (MethodUtils.hasAnnotation(method, PostForLocation.class)) {
+        if (hasPostLocation(method)) {
             return postForLocation(requestEntity, method);
         }
-        if (MethodUtils.returnTypeIsAnyOf(method, HttpEntity.class, ResponseEntity.class)) {
-            return exchangeForResponseEntity(method, requestEntity);
-        } else if (MethodUtils.returnTypeIsGeneric(method)) {
-            SyntheticParametrizedTypeReference<?> responseType = SyntheticParametrizedTypeReference.fromMethodReturnType(method);
+        ResolvableType resolvedType = ResolvableType.forMethodReturnType(method);
+
+        if (ResolvableTypeUtils.returnTypeIsAnyOf(method, HttpEntity.class, ResponseEntity.class)) {
+            return exchangeForResponseEntity(resolvedType, requestEntity);
+        } else if (ResolvableTypeUtils.returnTypeIsGeneric(method)) {
+            SyntheticParametrizedTypeReference<?> responseType = SyntheticParametrizedTypeReference.fromResolvableType(resolvedType);
             return extractBodyNullSafe(restTemplate.exchange(requestEntity, responseType));
         }
         Class<?> returnType = GenericTypeResolver.resolveReturnTypeForGenericMethod(method, invocation.getArguments(), null);
         return extractBodyNullSafe(restTemplate.exchange(requestEntity, returnType));
     }
 
+    private boolean hasPostLocation(Method method) {
+        return AnnotationUtils.findAnnotation(method, PostForLocation.class) != null;
+    }
+
     private URI postForLocation(RequestEntity<Object> requestEntity, Method method) {
-        if (!MethodUtils.returnTypeIs(method, URI.class)) {
+        if (!ResolvableTypeUtils.returnTypeIs(method, URI.class)) {
             throw new RuntimeException("Method annotated with @PostForLocation must return URI");
         }
         return restTemplate.exchange(requestEntity, Object.class).getHeaders().getLocation();
     }
 
-    private ResponseEntity<?> exchangeForResponseEntity(Method method, RequestEntity<Object> requestEntity) {
-        SyntheticParametrizedTypeReference<?> responseType = SyntheticParametrizedTypeReference
-            .fromMethodReturnType(method).getTypeArgument(0);
-        return restTemplate.exchange(requestEntity, responseType);
+    private ResponseEntity<?> exchangeForResponseEntity(ResolvableType resolvedType, RequestEntity<Object> requestEntity) {
+        return restTemplate.exchange(requestEntity, SyntheticParametrizedTypeReference.fromResolvableType(resolvedType.getGeneric(0)));
     }
 
     private Object extractBodyNullSafe(ResponseEntity<?> responseEntity) {

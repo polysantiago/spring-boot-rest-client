@@ -1,7 +1,5 @@
 package se.svt.core.lib.utils.rest;
 
-import se.svt.core.lib.utils.rest.RestClientListenableFutureAsyncTest.ListenableFutureAsyncFooClient;
-
 import org.junit.Test;
 import org.mockito.Mock;
 import org.springframework.context.annotation.Configuration;
@@ -9,6 +7,7 @@ import org.springframework.http.*;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.bind.annotation.*;
+import se.svt.core.lib.utils.rest.RestClientListenableFutureAsyncTest.ListenableFutureAsyncFooClient;
 
 import java.net.URI;
 import java.util.List;

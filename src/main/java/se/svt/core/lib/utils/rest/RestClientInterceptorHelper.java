@@ -1,7 +1,5 @@
 package se.svt.core.lib.utils.rest;
 
-import se.svt.core.lib.utils.rest.support.MethodParameters;
-
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -19,6 +17,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import se.svt.core.lib.utils.rest.support.MethodParameters;
 
 import java.lang.reflect.Method;
 import java.net.URI;

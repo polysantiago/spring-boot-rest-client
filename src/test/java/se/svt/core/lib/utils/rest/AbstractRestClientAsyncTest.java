@@ -1,7 +1,5 @@
 package se.svt.core.lib.utils.rest;
 
-import se.svt.core.lib.utils.rest.AbstractRestClientAsyncTest.AsyncFooClient;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
@@ -25,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
+import se.svt.core.lib.utils.rest.AbstractRestClientAsyncTest.AsyncFooClient;
 
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -54,7 +53,7 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     private ObjectMapper objectMapper;
 
     @Autowired
-    AsyncRestTemplate asyncRestTemplate;
+    private AsyncRestTemplate asyncRestTemplate;
 
     MockRestServiceServer asyncServer;
 
@@ -373,4 +372,5 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     private <U> U getResponse(Future<U> future) throws Exception {
         return future.get(10, TimeUnit.SECONDS);
     }
+
 }

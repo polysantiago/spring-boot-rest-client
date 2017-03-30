@@ -1,5 +1,6 @@
 package se.svt.core.lib.utils.rest;
 
+import lombok.Getter;
 import lombok.Setter;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.FactoryBean;
@@ -10,7 +11,6 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 
@@ -23,11 +23,14 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, ApplicationContextAware {
 
     private static final String PREFERRED_CONVERSION_SERVICE = "mvcConversionService";
-    private final ClassLoader classLoader = ClassUtils.getDefaultClassLoader();
 
     private String name;
+
     private String url;
-    private Class<?> type;
+
+    @Getter
+    private Class<?> objectType;
+
     private ApplicationContext applicationContext;
 
     @Override
@@ -45,7 +48,7 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         FormattingConversionService conversionService = getConversionService();
 
         ProxyFactory proxyFactory = new ProxyFactory();
-        proxyFactory.addInterface(type);
+        proxyFactory.addInterface(objectType);
 
         SyncRequestHelper syncRequestHelper = new SyncRequestHelper(specification, restTemplate);
         AsyncRequestHelper asyncRequestHelper = new AsyncRequestHelper(asyncRestTemplate);
@@ -63,7 +66,7 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
 
         proxyFactory.addAdvice(interceptor);
 
-        return proxyFactory.getProxy(classLoader);
+        return proxyFactory.getProxy(applicationContext.getClassLoader());
     }
 
     private FormattingConversionService getConversionService() {
@@ -87,11 +90,6 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         } catch (NoSuchBeanDefinitionException ex) {
             return Optional.empty();
         }
-    }
-
-    @Override
-    public Class<?> getObjectType() {
-        return this.type;
     }
 
     @Override

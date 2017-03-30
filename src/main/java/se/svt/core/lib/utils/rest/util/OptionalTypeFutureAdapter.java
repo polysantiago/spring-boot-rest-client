@@ -12,18 +12,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class OptionalTypeFutureAdapter<T extends Optional<?>> extends ResponseFutureAdapter<T> {
+public class OptionalTypeFutureAdapter<T> extends ResponseFutureAdapter<Optional<T>> {
 
-    public OptionalTypeFutureAdapter(ListenableFuture<ResponseEntity<T>> delegate) {
+    public OptionalTypeFutureAdapter(ListenableFuture<ResponseEntity<Optional<T>>> delegate) {
         super(delegate);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public void addCallback(SuccessCallback<? super T> successCallback, FailureCallback failureCallback) {
+    public void addCallback(SuccessCallback<? super Optional<T>> successCallback, FailureCallback failureCallback) {
         super.addCallback(successCallback, throwable -> {
             if (isNotFoundException(throwable)) {
-                successCallback.onSuccess((T) Optional.empty());
+                successCallback.onSuccess(Optional.<T>empty());
             } else {
                 failureCallback.onFailure(throwable);
             }
@@ -31,7 +31,7 @@ public class OptionalTypeFutureAdapter<T extends Optional<?>> extends ResponseFu
     }
 
     @Override
-    public T get() throws InterruptedException, ExecutionException {
+    public Optional<T> get() throws InterruptedException, ExecutionException {
         try {
             return super.get();
         } catch (ExecutionException executionException) {
@@ -40,7 +40,7 @@ public class OptionalTypeFutureAdapter<T extends Optional<?>> extends ResponseFu
     }
 
     @Override
-    public T get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
+    public Optional<T> get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         try {
             return super.get(timeout, unit);
         } catch (ExecutionException executionException) {
@@ -48,10 +48,9 @@ public class OptionalTypeFutureAdapter<T extends Optional<?>> extends ResponseFu
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private T handleExecutionException(ExecutionException executionException) throws ExecutionException {
+    private Optional<T> handleExecutionException(ExecutionException executionException) throws ExecutionException {
         if (isNotFoundException(executionException.getCause())) {
-            return (T) Optional.empty();
+            return Optional.empty();
         }
         throw executionException;
     }

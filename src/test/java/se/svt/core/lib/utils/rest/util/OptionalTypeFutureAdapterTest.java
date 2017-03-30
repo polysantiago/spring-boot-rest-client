@@ -30,7 +30,7 @@ public class OptionalTypeFutureAdapterTest {
 
     @Before
     public void setUp() {
-        OptionalTypeFutureAdapter<Optional<String>> listenableFutureWrapper = new OptionalTypeFutureAdapter<>(wrappedFuture);
+        OptionalTypeFutureAdapter<String> listenableFutureWrapper = new OptionalTypeFutureAdapter<>(wrappedFuture);
         listenableFutureWrapper.addCallback(callback);
     }
 

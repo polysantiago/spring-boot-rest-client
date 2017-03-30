@@ -1,14 +1,13 @@
 package se.svt.core.lib.utils.rest;
 
-import se.svt.core.lib.utils.rest.retry.BackOffSettings;
-import se.svt.core.lib.utils.rest.retry.RetrySettings;
-
 import org.junit.After;
 import org.junit.Test;
-import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
+import se.svt.core.lib.utils.rest.retry.BackOffSettings;
+import se.svt.core.lib.utils.rest.retry.RetrySettings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -79,7 +78,7 @@ public class RestClientPropertiesTest {
 
     @Configuration
     @EnableConfigurationProperties(RestClientProperties.class)
-    protected static class TestConfiguration {
+    static class TestConfiguration {
 
     }
 }

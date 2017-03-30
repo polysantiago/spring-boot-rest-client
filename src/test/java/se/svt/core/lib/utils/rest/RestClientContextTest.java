@@ -6,7 +6,6 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.retry.annotation.EnableRetry;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
@@ -19,7 +18,7 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootTest
 public class RestClientContextTest {
 
-    @Order(Ordered.LOWEST_PRECEDENCE)
+    @Order
     @Configuration
     @EnableAutoConfiguration
     @EnableRetry

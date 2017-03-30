@@ -1,25 +1,27 @@
 package se.svt.core.lib.utils.rest;
 
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.BeanCreationException;
+import org.junit.rules.ExpectedException;
+import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.format.support.FormattingConversionService;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.bind.annotation.GetMapping;
 
-@RunWith(SpringRunner.class)
+import static org.hamcrest.core.IsInstanceOf.instanceOf;
+
 public class RestClientAutoConfigurationTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testInjectConversionServiceSingleCandidate() {
-        AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext
-            (SingleCandidateConfiguration.class);
-        TestClient restClient = applicationContext.getBean(TestClient.class);
+        new AnnotationConfigApplicationContext(SingleCandidateConfiguration.class).getBean(TestClient.class);
     }
 
 
@@ -35,13 +37,11 @@ public class RestClientAutoConfigurationTest {
 
     }
 
-    @Test(expected = BeanCreationException.class)
+    @Test
     public void testInjectConversionMultipleCandidates() {
-        AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext
-            (MultipleCandidatesConfiguration.class);
-        TestClient restClient = applicationContext.getBean(TestClient.class);
+        thrown.expectCause(instanceOf(NoUniqueBeanDefinitionException.class));
+        new AnnotationConfigApplicationContext(MultipleCandidatesConfiguration.class).getBean(TestClient.class);
     }
-
 
     @Configuration
     @EnableAutoConfiguration
@@ -58,15 +58,11 @@ public class RestClientAutoConfigurationTest {
             return new DefaultFormattingConversionService();
         }
 
-
     }
-
 
     @Test
     public void testInjectMvcConversionServiceAsDefault() {
-        AnnotationConfigApplicationContext applicationContext = new AnnotationConfigApplicationContext
-            (InjectMvcConversionServiceAsDefaultConfiguration.class);
-        TestClient restClient = applicationContext.getBean(TestClient.class);
+        new AnnotationConfigApplicationContext(InjectMvcConversionServiceAsDefaultConfiguration.class).getBean(TestClient.class);
     }
 
     @Configuration

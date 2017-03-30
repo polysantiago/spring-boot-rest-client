@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.annotation.AnnotatedBeanDefinition;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
@@ -18,10 +17,8 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotationMetadata;
-import org.springframework.core.type.ClassMetadata;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
-import org.springframework.core.type.filter.AbstractClassTestingTypeFilter;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.util.Assert;
@@ -34,11 +31,14 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.google.common.collect.Sets.newHashSet;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.springframework.util.Assert.state;
 import static org.springframework.util.StringUtils.hasText;
@@ -64,49 +64,40 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
             scanner.addIncludeFilter(annotationTypeFilter);
             basePackages = getBasePackages(metadata);
         } else {
-            final Set<String> clientClasses = newHashSet();
-            basePackages = new HashSet<>();
-            for (Class<?> clazz : clients) {
-                basePackages.add(ClassUtils.getPackageName(clazz));
-                clientClasses.add(clazz.getCanonicalName());
-            }
-            AbstractClassTestingTypeFilter filter = new AbstractClassTestingTypeFilter() {
-                @Override
-                protected boolean match(ClassMetadata metadata) {
-                    String cleaned = metadata.getClassName().replaceAll("\\$", ".");
-                    return clientClasses.contains(cleaned);
-                }
-            };
-            scanner.addIncludeFilter(new AllTypeFilter(Arrays.asList(filter, annotationTypeFilter)));
+            TypeFilter innerClassFilter = (reader, factory) ->
+                Arrays.stream(clients)
+                    .map(Class::getCanonicalName)
+                    .anyMatch(name -> name.equals(reader.getClassMetadata().getClassName().replaceAll("\\$", ".")));
+
+            scanner.addIncludeFilter(new AllTypeFilter(Arrays.asList(innerClassFilter, annotationTypeFilter)));
+
+            basePackages = Arrays.stream(clients).map(ClassUtils::getPackageName).collect(toSet());
         }
 
-        for (String basePackage : basePackages) {
-            Set<BeanDefinition> candidateComponents = scanner.findCandidateComponents(basePackage);
-            // verify annotated class is an interface
-            candidateComponents.stream().filter(candidateComponent -> candidateComponent instanceof AnnotatedBeanDefinition)
-                .forEach(candidateComponent -> {
-                    // verify annotated class is an interface
-                    AnnotatedBeanDefinition beanDefinition = (AnnotatedBeanDefinition) candidateComponent;
-                    AnnotationMetadata annotationMetadata = beanDefinition.getMetadata();
-                    Assert.isTrue(annotationMetadata.isInterface(), "@RestClient can only be specified on an interface");
+        basePackages.stream()
+            .map(scanner::findCandidateComponents)
+            .flatMap(Set::stream)
+            .filter(AnnotatedBeanDefinition.class::isInstance)
+            .map(AnnotatedBeanDefinition.class::cast)
+            .map(AnnotatedBeanDefinition::getMetadata)
+            .forEach(annotationMetadata -> {
+                Assert.isTrue(annotationMetadata.isInterface(), "@RestClient can only be specified on an interface");
 
-                    Map<String, Object> attributes = annotationMetadata.getAnnotationAttributes(RestClient.class.getCanonicalName());
-
-                    String name = getClientName(attributes);
-                    registerClientConfiguration(beanDefinitionRegistry, name, attributes);
-                    registerRestClient(beanDefinitionRegistry, annotationMetadata, attributes);
-                });
-        }
+                Map<String, Object> attributes = annotationMetadata.getAnnotationAttributes(RestClient.class.getCanonicalName());
+                registerClientConfiguration(beanDefinitionRegistry, getClientName(attributes), attributes);
+                registerRestClient(beanDefinitionRegistry, annotationMetadata, attributes);
+            });
     }
 
     private Set<String> getBasePackages(AnnotationMetadata metadata) {
         Map<String, Object> attributes = metadata.getAnnotationAttributes(EnableRestClients.class.getCanonicalName());
 
-        Set<String> basePackages = ImmutableSet.<String>builder()
-            .addAll(Stream.of((String[]) attributes.get("value")).filter(StringUtils::hasText).collect(toList()))
-            .addAll(Stream.of((String[]) attributes.get("basePackages")).filter(StringUtils::hasText).collect(toList()))
-            .addAll(Stream.of((Class[]) attributes.get("basePackageClasses")).map(ClassUtils::getPackageName).collect(toList()))
-            .build();
+        Set<String> basePackages = Stream
+            .of(Arrays.stream((String[]) attributes.get("value")).filter(StringUtils::hasText),
+                Arrays.stream((String[]) attributes.get("basePackages")).filter(StringUtils::hasText),
+                Arrays.stream((Class[]) attributes.get("basePackageClasses")).map(ClassUtils::getPackageName))
+            .flatMap(Function.identity())
+            .collect(toSet());
 
         if (basePackages.isEmpty()) {
             return ImmutableSet.of(ClassUtils.getPackageName(metadata.getClassName()));
@@ -167,7 +158,7 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
 
         definition.addPropertyValue("name", name);
         definition.addPropertyValue("url", getUrl(attributes));
-        definition.addPropertyValue("type", className);
+        definition.addPropertyValue("objectType", className);
 
         definition.setAutowireMode(AbstractBeanDefinition.AUTOWIRE_BY_TYPE);
 

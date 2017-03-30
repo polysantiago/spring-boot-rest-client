@@ -1,31 +1,25 @@
 package se.svt.core.lib.utils.rest.support;
 
+import lombok.Getter;
+import org.springframework.core.ResolvableType;
+
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
+@Getter
 public final class SyntheticParametrizedType implements ParameterizedType, Serializable {
 
     private static final long serialVersionUID = -521679299810654826L;
 
     private final Type rawType;
-    private final Type[] typeArguments;
+    private final Type[] actualTypeArguments;
 
-    public SyntheticParametrizedType(Type rawType, Type... typeArguments) {
-        this.rawType = rawType;
-        this.typeArguments = typeArguments;
-    }
-
-    @Override
-    public Type[] getActualTypeArguments() {
-        return this.typeArguments;
-    }
-
-    @Override
-    public Type getRawType() {
-        return this.rawType;
+    SyntheticParametrizedType(ResolvableType resolvedType) {
+        this.rawType = resolvedType.getRawClass();
+        this.actualTypeArguments = resolvedType.resolveGenerics();
     }
 
     @Override
@@ -36,6 +30,6 @@ public final class SyntheticParametrizedType implements ParameterizedType, Seria
     @Override
     public String toString() {
         return String.format("%s<%s<%s>>", SyntheticParametrizedType.class.getName(), rawType.getTypeName(),
-            Arrays.stream(typeArguments).map(Type::getTypeName).collect(Collectors.joining(",")));
+            Arrays.stream(actualTypeArguments).map(Type::getTypeName).collect(Collectors.joining(",")));
     }
 }

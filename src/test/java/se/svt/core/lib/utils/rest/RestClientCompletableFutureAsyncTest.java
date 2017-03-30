@@ -1,12 +1,11 @@
 package se.svt.core.lib.utils.rest;
 
-import se.svt.core.lib.utils.rest.RestClientCompletableFutureAsyncTest.CompletableFutureAsyncFooClient;
-
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import se.svt.core.lib.utils.rest.RestClientCompletableFutureAsyncTest.CompletableFutureAsyncFooClient;
 
 import java.net.URI;
 import java.util.List;
