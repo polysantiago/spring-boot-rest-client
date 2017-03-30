@@ -17,7 +17,7 @@ buildscript {
 plugins {
     id 'java'
     id 'idea'
-    id 'org.springframework.boot' version '1.5.1.RELEASE'
+    id 'org.springframework.boot' version '1.5.2.RELEASE'
     id 'maven-publish'
 }
 
@@ -25,8 +25,8 @@ apply plugin: 'propdeps'
 apply plugin: 'propdeps-maven'
 apply plugin: 'propdeps-idea'
 
-group = "se.svt.core.lib.utils.rest"
-description = "Spring Rest Client"
+group = "se.polysantiago.spring.rest"
+description = "Spring Boot Rest Client"
 
 idea {
     project {
@@ -68,13 +68,13 @@ dependencies {
     compile('org.apache.commons:commons-collections4:4.1')
     // end::utils[]
 
-    compile('net.javacrumbs.future-converter:future-converter-spring-java8:0.3.0')
+    compile('net.javacrumbs.future-converter:future-converter-spring-java8:1.1.0')
 
     testCompile("org.springframework.boot:spring-boot-starter-test")
     testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
     testCompile('com.fasterxml.jackson.module:jackson-module-parameter-names')
-    testCompile('org.assertj:assertj-core:3.5.2')
+    testCompile('org.assertj:assertj-core:3.6.2')
 }
 
 task sourceJar(type: Jar) {

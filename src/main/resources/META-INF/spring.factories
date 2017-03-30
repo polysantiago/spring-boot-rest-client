@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-se.svt.core.lib.utils.rest.RestClientAutoConfiguration
+se.polysantiago.spring.rest.RestClientAutoConfiguration

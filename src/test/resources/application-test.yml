@@ -1,9 +1,10 @@
-svt:
-  rest-client:
-    services:
-      localhost: http://localhost
-    retry:
-      max-attempts: 2
+spring:
+  rest:
+    client:
+      services:
+        localhost: http://localhost
+      retry:
+        max-attempts: 2
 
 localhost:
   uri: http://localhost
