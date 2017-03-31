@@ -5,9 +5,10 @@ plugins {
     id 'maven'
     id 'maven-publish'
     id 'nebula.optional-base' version '3.0.3'
+    id 'nebula.provided-base' version '3.0.3'
 }
 
-group = "se.polysantiago.spring.rest"
+group = "io.github.polysantiago"
 description = "Spring Boot Rest Client"
 
 idea {
@@ -46,7 +47,7 @@ dependencies {
     compile 'org.springframework.retry:spring-retry', optional
     compile 'org.aspectj:aspectjweaver', optional
 
-    compileOnly 'org.projectlombok:lombok'
+    provided 'org.projectlombok:lombok'
     compile 'org.apache.commons:commons-lang3:3.5'
     compile 'net.javacrumbs.future-converter:future-converter-spring-java8:1.1.0'
 
@@ -54,7 +55,6 @@ dependencies {
     testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
     testCompile('org.assertj:assertj-core:3.6.2')
-    testCompileOnly 'org.projectlombok:lombok'
 }
 
 task sourceJar(type: Jar) {
@@ -79,19 +79,12 @@ publishing {
             }
 
             pom.withXml {
-                asNode().dependencies.dependency.findAll { xmlDependency ->
-
-                    // fix maven-publish issue when all maven dependencies are placed into runtime scope
-                    if (project.configurations.compile.allDependencies.findAll { dependency ->
-                        xmlDependency.groupId.text() == dependency.group && xmlDependency.artifactId.text() == dependency.name
-                    }) {
-                        def xmlScope = xmlDependency.scope[0]
-                        if (!xmlScope) {
-                            xmlScope = xmlDependency.appendNode('scope')
-                        }
-                        xmlScope.value = 'compile'
+                // fix maven-publish issue when all maven dependencies are placed into runtime scope
+                asNode().dependencies.dependency.findAll() {
+                    it.scope.text() == 'runtime' && project.configurations.compile.dependencies.find { dep ->
+                        dep.name == it.artifactId.text()
                     }
-                }
+                }.each { it.scope*.value = 'compile' }
             }
         }
     }

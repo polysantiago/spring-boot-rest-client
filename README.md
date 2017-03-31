@@ -45,7 +45,7 @@ spring:
         foo: http://foo.bar.se
 ```
     
-You can later use `@Autowired` and just call `fooClient.getFoo()` which will make an `HTTP GET` call to `http://foo.bar.se
+You can later use `@Autowired` and just call `fooClient.getFoo()` which will make an `HTTP GET` call to `http://foo.bar.se`
 
 `@RequestMapping` values have the following correspondence to the resulting HTTP call:
     
