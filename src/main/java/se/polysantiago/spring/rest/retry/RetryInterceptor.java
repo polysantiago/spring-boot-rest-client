@@ -1,11 +1,11 @@
 package se.polysantiago.spring.rest.retry;
 
-import com.google.common.collect.ImmutableMap;
 import org.springframework.retry.backoff.*;
 import org.springframework.retry.interceptor.RetryInterceptorBuilder;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.retry.policy.SimpleRetryPolicy;
 
+import static java.util.Collections.singletonMap;
 import static org.apache.commons.lang3.ObjectUtils.defaultIfNull;
 
 public class RetryInterceptor {
@@ -18,7 +18,7 @@ public class RetryInterceptor {
 
     public RetryOperationsInterceptor buildInterceptor() {
         return RetryInterceptorBuilder.stateless()
-            .retryPolicy(new SimpleRetryPolicy(retrySettings.getMaxAttempts(), ImmutableMap.of(RetryableException.class, true)))
+            .retryPolicy(new SimpleRetryPolicy(retrySettings.getMaxAttempts(), singletonMap(RetryableException.class, true)))
             .backOffPolicy(getBackOffPolicy())
             .build();
     }

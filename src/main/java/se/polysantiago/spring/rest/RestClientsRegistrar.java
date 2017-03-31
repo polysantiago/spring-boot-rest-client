@@ -1,6 +1,5 @@
 package se.polysantiago.spring.rest;
 
-import com.google.common.collect.ImmutableSet;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -38,6 +37,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
 import static org.apache.commons.lang3.ArrayUtils.isEmpty;
 import static org.springframework.util.Assert.state;
@@ -100,7 +100,7 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
             .collect(toSet());
 
         if (basePackages.isEmpty()) {
-            return ImmutableSet.of(ClassUtils.getPackageName(metadata.getClassName()));
+            return singleton(ClassUtils.getPackageName(metadata.getClassName()));
         }
         return basePackages;
     }

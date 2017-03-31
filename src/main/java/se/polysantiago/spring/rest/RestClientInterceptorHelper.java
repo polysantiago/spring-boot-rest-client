@@ -28,11 +28,11 @@ import java.util.stream.Stream;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.collections4.CollectionUtils.isNotEmpty;
 import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
 import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.apache.commons.lang3.StringUtils.substringBefore;
 import static org.springframework.http.MediaType.parseMediaType;
+import static org.springframework.util.CollectionUtils.isEmpty;
 
 class RestClientInterceptorHelper {
 
@@ -92,7 +92,7 @@ class RestClientInterceptorHelper {
     }
 
     private MultiValueMap<String, String> getQueryParameters(List<MethodParameter> parameters, Object[] arguments) {
-        if (isNotEmpty(parameters)) {
+        if (!isEmpty(parameters)) {
             return new LinkedMultiValueMap<>(parameters.stream()
                 .filter(parameter -> parameter.hasParameterAnnotation(RequestParam.class))
                 .collect(toMap(
@@ -122,7 +122,7 @@ class RestClientInterceptorHelper {
     }
 
     private Object[] getPathParameters(List<MethodParameter> parameters, Object[] arguments) {
-        if (isNotEmpty(parameters)) {
+        if (!isEmpty(parameters)) {
             return parameters.stream()
                 .filter(parameter -> parameter.hasParameterAnnotation(PathVariable.class))
                 .map(parameter -> arguments[parameter.getParameterIndex()])
@@ -146,7 +146,7 @@ class RestClientInterceptorHelper {
     private static Object body(List<MethodParameter> parameters, Object[] arguments) {
         // Get argument for first parameter annotated with RequestBody,
         // or if non found, argument for first non-annotated parameter
-        if (isNotEmpty(parameters)) {
+        if (!isEmpty(parameters)) {
             Object body = getAnnotatedBody(parameters, arguments);
             if (body != null) {
                 return body;
@@ -180,7 +180,7 @@ class RestClientInterceptorHelper {
     }
 
     private void paramHeaders(List<MethodParameter> parameters, Object[] arguments, BodyBuilder builder) {
-        if (isNotEmpty(parameters)) {
+        if (!isEmpty(parameters)) {
             parameters.stream()
                 .filter(parameter -> parameter.hasParameterAnnotation(RequestHeader.class))
                 .forEach(

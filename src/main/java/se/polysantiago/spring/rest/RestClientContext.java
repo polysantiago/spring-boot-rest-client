@@ -5,18 +5,13 @@ import lombok.AllArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URI;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Maps.newHashMap;
+import java.util.*;
 
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 class RestClientContext {
 
-    private List<RestClientSpecification> specifications = newArrayList();
-    private Map<String, Object> services = newHashMap();
+    private List<RestClientSpecification> specifications = new ArrayList<>();
+    private Map<String, Object> services = new HashMap<>();
 
     RestClientSpecification findByRestClientName(String name) {
         return specifications

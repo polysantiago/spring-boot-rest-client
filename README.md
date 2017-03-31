@@ -1,7 +1,7 @@
 Spring Boot Rest Client
 =======
 
-This library was born as an effort to avoid boilerplate code and making use of Spring Boot's configuration features.
+This library was born as an effort to avoid boilerplate code and making use of Spring Boot's auto-configuration features.
 
 It is based on [Spring Cloud Feign](http://projects.spring.io/spring-cloud/spring-cloud.html#spring-cloud-feign) but it 
 uses [RestTemplate](https://docs.spring.io/spring/docs/current/javadoc-api/org/springframework/web/client/RestTemplate.html) 
@@ -17,7 +17,7 @@ Usage
 @EnableRestClients
 @SpringBootApplication
 public class FooApplication {
-
+    
     public static void main(String... args) {
         SpringApplication.run(FooApplication.class, args);
     }
@@ -29,7 +29,7 @@ public class FooApplication {
         Foo getFoo();
     
     }
-
+    
 }
 ```
 
@@ -41,14 +41,14 @@ spring:
         foo: http://foo.bar.se
 ```
     
-You can later use `@Autowired` and just call `fooClient.getFoo()` which will make an `HTTP GET` call to http://foo.bar.se
+You can later use `@Autowired` and just call `fooClient.getFoo()` which will make an `HTTP GET` call to `http://foo.bar.se
 
 `@RequestMapping` values have the following correspondence to the resulting HTTP call:
     
 * `value()` - Path appended to the host
 * `method()` - The HTTP method (GET is the default)
 * `produces()` - Value of the [Accept](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.1) header
-* `consumes()` - Value of the [Content-Type](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17) - `application/octet-stream` is the default
+* `consumes()` - Value of the [Content-Type](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.17) header
 * `headers()` - `String[]` of key-value pairs of headers separated by ':'
 
 All HTTP REST methods are supported (GET, POST, PUT, PATCH and DELETE) as well as the following annotations on parameters:
@@ -60,13 +60,87 @@ All HTTP REST methods are supported (GET, POST, PUT, PATCH and DELETE) as well a
  
 A method parameter with no annotation is expected to be the request body (payload) of the request 
 if `@RequestBody` is not specified.
+
+In addition to `@RequestMapping`, composed variants introduced in Spring MVC 4.3 can also be used.
+Check [this](https://docs.spring.io/spring/docs/current/spring-framework-reference/html/mvc.html#mvc-ann-requestmapping-composed)
+for more details.
+
+Async
+-----
+Spring Boot Rest Template can be also be configured to be used for asynchronous REST calls for which it will instead use
+an `AsyncRestTemplate` bean. It supports both Oracle's [CompletableFuture](https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/CompletableFuture.html) 
+as well as Spring's [ListenableFuture](http://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/util/concurrent/ListenableFuture.html).
+
+```java
+@RestClient("foo")
+interface FooClient {
+    
+    @RequestMapping("/{id}")
+    ListenableFuture<String> foo(@PathVariable("id") String id, @RequestParam("query") String query);
+    
+    @RequestMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    CompletableFuture<Foo> getFoo(@PathVariable("id") String id);
+    
+}
+```
+
+HTTP Entities
+-----
+If for some reason you do not wish to have the body extracted from your response, you can wrap your response type in
+either a [ResponseEntity](http://docs.spring.io/autorepo/docs/spring/current/javadoc-api/org/springframework/http/ResponseEntity.html) 
+as well as an [HttpEntity](http://docs.spring.io/spring-framework/docs/current/javadoc-api/org/springframework/http/HttpEntity.html).
+
+```java
+@RestClient("foo")
+interface FooClient {
+    
+    @GetMapping
+    ResponseEntity<String> getEntity();
+    
+    @GetMapping
+    HttpEntity<String> getHttpEntity();
+    
+}
+```
+
+JDK 8 Support
+-----
+If you wrap your response type in Oracle's JDK 8 [Optional](https://docs.oracle.com/javase/8/docs/api/java/util/Optional.html),
+Spring Boot Rest Client will return an `Optional.empty()` upon a `HTTP 404 NOT FOUND` response code.
+
+```java
+@RestClient("foo")
+interface FooClient {
+    
+        @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+        Optional<Foo> getOptional();
+    
+}
+```
+
+HATEOAS Support
+-----
+
+Specially useful for [HATEOAS](https://en.wikipedia.org/wiki/HATEOAS), you can use the `@PostForLocation` annotation to
+indicate that a POST request should return the `Location` HTTP header as an `URI`.
+
+```java
+@RestClient("foo")
+interface FooClient {
+    
+    @PostForLocation("/postForLocation")
+    URI postForLocation(String body);
+    
+}
+```
  
 Retry
 -----
 
-The rest client library can be used with Spring Retry. Just by adding the spring-retry library as a dependency 
-and `@EnableRetry` in your configuration, the retry functionality will be enabled. By default, calls are retried 
-on `HTTP 503 SERVICE UNAVAILABLE` and `IOException` but you can configure your own:
+The rest client library can be used with Spring Retry. Just by adding the `org.springframework.retry:spring-retry` 
+library as a dependency and `@EnableRetry` in your configuration, the retry functionality will be enabled.
+Make sure that `org.springframework.boot:spring-boot-starter-aop` is available in order to enable proxying capabilities.
+By default, calls are retried on `HTTP 503 SERVICE UNAVAILABLE` and `IOException` but you can configure your own:
 
 ```java
 @RestClient(
@@ -75,7 +149,7 @@ on `HTTP 503 SERVICE UNAVAILABLE` and `IOException` but you can configure your o
     retryOnException = SocketTimeoutException.class)
 interface FooClient {
     
-    @RestClient(value = "/foos")
+    @RestClient("/foos")
     List<Foo> getFooList();
     
 }
@@ -104,8 +178,8 @@ Refer to [Spring Retry](https://github.com/spring-projects/spring-retry) for mor
 Miscellaneous
 -------------
 
-* If the return type of the method is `Optional<T>` and the request returns an HTTP 404 NOT FOUND, then the result is `Optional.empty()`
-* The library will create a `RestTemplate` Spring bean if not already present
+* The library will create a `RestTemplate` and a `AsyncRestTemplate` Spring beans if not already present using a
+[RestTemplateBuilder](http://docs.spring.io/spring-boot/docs/current/api/org/springframework/boot/web/client/RestTemplateBuilder.html)
 * The library is non-intrusive. That means that if you want the spring-retry functionality you'll need to include it and 
 all of its dependencies
 * `@RestClient` also accepts an optional `url()` parameter which can be either a hardcoded value 

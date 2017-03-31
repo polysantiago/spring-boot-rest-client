@@ -1,7 +1,6 @@
 package se.polysantiago.spring.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,13 +23,16 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
-import static com.google.common.collect.Lists.newArrayList;
-import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.toEncodedString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Fail.fail;
 import static org.springframework.test.web.client.MockRestServiceServer.createServer;
@@ -97,11 +99,10 @@ public class RestClientTest {
         Void barWithContentType(Foo foo);
 
         @GetMapping(value = "/")
-        Void batWithObjectAsParameters(
+        Void barWithObjectAsParameters(
             @RequestHeader("header") Foo foo1,
             @RequestParam("date") LocalDate date,
             @RequestParam("obj") Foo foo2);
-
 
         @PutMapping
         Void barPut(String body);
@@ -122,7 +123,8 @@ public class RestClientTest {
         byte[] raw();
 
         @GetMapping(headers = "Some-Header:some-value")
-        Void fooWithHeaders(@RequestHeader("User-Id") String userId, @RequestHeader("Password") String password);
+        Void fooWithHeaders(@RequestHeader("User-Id") String userId,
+                            @RequestHeader("Password") String password);
 
         @GetMapping
         ResponseEntity<String> getEntity();
@@ -133,7 +135,7 @@ public class RestClientTest {
         @GetMapping(value = "/{id}")
         <T> T getParameterized(@PathVariable("id") String id, Class<T> type);
 
-        @PostForLocation(value = "/postForLocation")
+        @PostForLocation("/postForLocation")
         URI postForLocation(String body);
 
         @GetMapping("/{id}")
@@ -167,8 +169,8 @@ public class RestClientTest {
         Foo foo = new Foo("bar");
 
         server.expect(requestTo("http://localhost/some-id"))
-              .andExpect(method(HttpMethod.GET))
-              .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
+            .andExpect(method(HttpMethod.GET))
+            .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
 
         Foo response = fooClient.getParameterized("some-id", Foo.class);
 
@@ -211,7 +213,7 @@ public class RestClientTest {
 
     @Test
     public void testRestClientGetList() throws Exception {
-        List<Foo> foos = newArrayListWithCapacity(2);
+        List<Foo> foos = new ArrayList<>(2);
         foos.add(new Foo("bar0"));
         foos.add(new Foo("bar1"));
 
@@ -228,7 +230,7 @@ public class RestClientTest {
 
     @Test
     public void testRestClientListAsParam() throws Exception {
-        List<String> params = newArrayList("abc", "cba");
+        List<String> params = Stream.of("abc", "cba").collect(toList());
 
         server.expect(requestTo("http://localhost/fooListParams?myList=abc&myList=cba"))
             .andExpect(method(HttpMethod.GET))
@@ -332,7 +334,7 @@ public class RestClientTest {
         Foo foo = new Foo("bar");
 
         String uri = UriComponentsBuilder.fromUriString("http://localhost/")
-            .queryParam("date", today.format(DateTimeFormatter.ISO_DATE))
+            .queryParam("date", today.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
             .queryParam("obj", foo.toString())
             .toUriString();
 
@@ -341,7 +343,7 @@ public class RestClientTest {
             .andExpect(header("header", foo.toString()))
             .andRespond(withSuccess());
 
-        fooClient.batWithObjectAsParameters(foo, today, foo);
+        fooClient.barWithObjectAsParameters(foo, today, foo);
     }
 
     @Test
@@ -408,7 +410,7 @@ public class RestClientTest {
 
         byte[] raw = fooClient.raw();
 
-        assertThat(StringUtils.toEncodedString(raw, Charset.defaultCharset())).isEqualTo("success");
+        assertThat(toEncodedString(raw, Charset.defaultCharset())).isEqualTo("success");
     }
 
     @Test

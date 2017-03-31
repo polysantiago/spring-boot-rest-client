@@ -24,7 +24,6 @@ public class RestClientAutoConfigurationTest {
         new AnnotationConfigApplicationContext(SingleCandidateConfiguration.class).getBean(TestClient.class);
     }
 
-
     @Configuration
     @EnableAutoConfiguration
     @EnableRestClients(clients = TestClient.class)

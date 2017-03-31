@@ -6,8 +6,10 @@ import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.util.Assert;
@@ -15,6 +17,7 @@ import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.apache.commons.lang3.StringUtils.isEmpty;
@@ -23,6 +26,7 @@ import static org.apache.commons.lang3.StringUtils.isEmpty;
 class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, ApplicationContextAware {
 
     private static final String PREFERRED_CONVERSION_SERVICE = "mvcConversionService";
+    private static final FormattingConversionService DEFAULT_CONVERSION_SERVICE = new DefaultFormattingConversionService();
 
     private String name;
 
@@ -70,11 +74,16 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
     }
 
     private FormattingConversionService getConversionService() {
-        if (applicationContext.containsBean(PREFERRED_CONVERSION_SERVICE)
-            && applicationContext.isTypeMatch(PREFERRED_CONVERSION_SERVICE, FormattingConversionService.class)) {
-            return applicationContext.getBean(PREFERRED_CONVERSION_SERVICE, FormattingConversionService.class);
+        Map<String, FormattingConversionService> map = applicationContext.getBeansOfType(FormattingConversionService.class);
+        if (map.containsKey(PREFERRED_CONVERSION_SERVICE)) {
+            return map.get(PREFERRED_CONVERSION_SERVICE);
+        } else if (map.size() > 1) {
+            throw new NoUniqueBeanDefinitionException(FormattingConversionService.class, map.keySet());
         }
-        return applicationContext.getBean(FormattingConversionService.class);
+        return map.entrySet().stream()
+            .map(Map.Entry::getValue)
+            .findFirst()
+            .orElse(DEFAULT_CONVERSION_SERVICE);
     }
 
     private URI getServiceUrl(RestClientContext context) {

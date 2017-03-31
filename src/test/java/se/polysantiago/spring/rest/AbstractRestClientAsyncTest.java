@@ -1,7 +1,6 @@
 package se.polysantiago.spring.rest;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
@@ -28,14 +27,15 @@ import se.polysantiago.spring.rest.AbstractRestClientAsyncTest.AsyncFooClient;
 
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.collect.Lists.newArrayListWithCapacity;
 import static java.util.Collections.singletonList;
+import static org.apache.commons.lang3.StringUtils.toEncodedString;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Fail.fail;
 import static org.springframework.test.web.client.MockRestServiceServer.createServer;
@@ -115,7 +115,7 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
 
     @Test
     public void testRestClientGetList() throws Exception {
-        List<Foo> foos = newArrayListWithCapacity(2);
+        List<Foo> foos = new ArrayList<>(2);
         foos.add(new Foo("bar0"));
         foos.add(new Foo("bar1"));
 
@@ -283,7 +283,7 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
 
         byte[] raw = getResponse(fooClient.raw());
 
-        assertThat(StringUtils.toEncodedString(raw, Charset.defaultCharset())).isEqualTo("success");
+        assertThat(toEncodedString(raw, Charset.defaultCharset())).isEqualTo("success");
     }
 
     @Test

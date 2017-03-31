@@ -1,29 +1,11 @@
-buildscript {
-    ext {
-        springBootVersion = '1.5.2.RELEASE'
-    }
-    repositories {
-        jcenter()
-        mavenLocal()
-        mavenCentral()
-        maven { url "http://repo.spring.io/plugins-release" }
-    }
-    dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-        classpath('org.springframework.build.gradle:propdeps-plugin:0.0.7')
-    }
-}
-
 plugins {
     id 'java'
     id 'idea'
-    id 'org.springframework.boot' version '1.5.2.RELEASE'
+    id "io.spring.dependency-management" version "1.0.1.RELEASE"
+    id 'maven'
     id 'maven-publish'
+    id 'nebula.optional-base' version '3.0.3'
 }
-
-apply plugin: 'propdeps'
-apply plugin: 'propdeps-maven'
-apply plugin: 'propdeps-idea'
 
 group = "se.polysantiago.spring.rest"
 description = "Spring Boot Rest Client"
@@ -40,41 +22,39 @@ idea {
 tasks.withType(JavaCompile) {
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-    options.compilerArgs << '-parameters'
 }
 
 repositories {
+    mavenLocal()
     mavenCentral()
     jcenter()
 }
 
 dependencyManagement {
-    dependencies {
-        dependency 'com.google.guava:guava:19.0'
+    imports {
+        mavenBom 'io.spring.platform:platform-bom:Brussels-SR1'
     }
 }
 
 dependencies {
-    compile("org.springframework.boot:spring-boot-starter-web")
+    compile("org.springframework.boot:spring-boot-autoconfigure")
+    compile("org.springframework.boot:spring-boot-starter-logging")
+    compile("org.springframework:spring-web")
+    compile("org.springframework:spring-webmvc")
 
-    optional("org.springframework.boot:spring-boot-starter-aop")
-    optional("org.springframework.boot:spring-boot-configuration-processor")
-    optional("org.springframework.retry:spring-retry")
+    compile 'org.springframework:spring-aop', optional
+    compile 'org.springframework.retry:spring-retry', optional
+    compile 'org.aspectj:aspectjweaver', optional
 
-    // tag::utils[]
-    optional('org.projectlombok:lombok')
-    compile('com.google.guava:guava')
-    compile('org.apache.commons:commons-lang3:3.4')
-    compile('org.apache.commons:commons-collections4:4.1')
-    // end::utils[]
-
-    compile('net.javacrumbs.future-converter:future-converter-spring-java8:1.1.0')
+    compileOnly 'org.projectlombok:lombok'
+    compile 'org.apache.commons:commons-lang3:3.5'
+    compile 'net.javacrumbs.future-converter:future-converter-spring-java8:1.1.0'
 
     testCompile("org.springframework.boot:spring-boot-starter-test")
     testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
-    testCompile('com.fasterxml.jackson.module:jackson-module-parameter-names')
     testCompile('org.assertj:assertj-core:3.6.2')
+    testCompileOnly 'org.projectlombok:lombok'
 }
 
 task sourceJar(type: Jar) {
@@ -98,36 +78,8 @@ publishing {
                 classifier "javadoc"
             }
 
-//            repositories {
-//                maven {
-//                    ext {
-//                        if (project.version.endsWith('-SNAPSHOT')) {
-//                            url "http://svtrepo.artifactoryonline.com/svtrepo/svt-snapshots-local"
-//                        } else {
-//                            url "http://svtrepo.artifactoryonline.com/svtrepo/libs-releases-local"
-//                        }
-//
-//                        credentials {
-//                            username 'deployer'
-//                            password artifactoryDeployPassword
-//                        }
-//                    }
-//                }
-//            }
-
             pom.withXml {
                 asNode().dependencies.dependency.findAll { xmlDependency ->
-
-                    // mark optional dependencies
-                    if (project.configurations.optional.allDependencies.findAll { dependency ->
-                        xmlDependency.groupId.text() == dependency.group && xmlDependency.artifactId.text() == dependency.name
-                    }) {
-                        def xmlOptional = xmlDependency.optional[0]
-                        if (!xmlOptional) {
-                            xmlOptional = xmlDependency.appendNode('optional')
-                        }
-                        xmlOptional.value = 'true'
-                    }
 
                     // fix maven-publish issue when all maven dependencies are placed into runtime scope
                     if (project.configurations.compile.allDependencies.findAll { dependency ->
@@ -139,7 +91,6 @@ publishing {
                         }
                         xmlScope.value = 'compile'
                     }
-
                 }
             }
         }

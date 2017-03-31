@@ -21,9 +21,6 @@ import static org.mockito.Mockito.verify;
 public class OptionalTypeFutureAdapterTest {
 
     @Mock
-    private ResponseEntity<Optional<String>> responseEntity;
-
-    @Mock
     private ListenableFutureCallback<Optional<String>> callback;
 
     private SettableListenableFuture<ResponseEntity<Optional<String>>> wrappedFuture = new SettableListenableFuture<>();

@@ -14,6 +14,7 @@ public @interface EnableRestClients {
      * Alias for the {@link #basePackages()} attribute. Allows for more concise annotation
      * declarations e.g.: {@code @ComponentScan("org.my.pkg")} instead of
      * {@code @ComponentScan(basePackages="org.my.pkg")}.
+     *
      * @return the array of 'basePackages'.
      */
     String[] value() default {};
@@ -43,7 +44,6 @@ public @interface EnableRestClients {
 
     /**
      * List of classes annotated with @RestClient. If not empty, disables classpath scanning.
-     * @return
      */
     Class<?>[] clients() default {};
 

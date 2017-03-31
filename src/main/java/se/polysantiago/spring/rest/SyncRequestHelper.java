@@ -23,7 +23,7 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Throwables.getRootCause;
+import static org.apache.commons.lang3.exception.ExceptionUtils.getRootCause;
 
 @RequiredArgsConstructor
 class SyncRequestHelper {
