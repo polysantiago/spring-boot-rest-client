@@ -1,6 +1,10 @@
 Spring Boot Rest Client
 =======
 
+[![Build Status](https://travis-ci.org/polysantiago/spring-boot-rest-client.svg?branch=master)](https://travis-ci.org/polysantiago/spring-boot-rest-client)
+[![GitHub issues](https://img.shields.io/github/issues/polysantiago/spring-boot-rest-client.svg)](https://github.com/polysantiago/spring-boot-rest-client/issues)
+[![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/polysantiago/spring-boot-rest-client/master/LICENSE)
+
 This library was born as an effort to avoid boilerplate code and making use of Spring Boot's auto-configuration features.
 
 It is based on [Spring Cloud Feign](http://projects.spring.io/spring-cloud/spring-cloud.html#spring-cloud-feign) but it 
