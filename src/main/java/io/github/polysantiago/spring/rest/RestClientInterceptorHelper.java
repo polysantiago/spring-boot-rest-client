@@ -164,15 +164,13 @@ class RestClientInterceptorHelper {
             .orElse(null);
     }
 
-    private static Object getNonAnnotatedParameterValue(List<MethodParameter> parameters,
-                                                        Object[] arguments) {
+    private static Object getNonAnnotatedParameterValue(List<MethodParameter> parameters, Object[] arguments) {
         return parameters.stream()
             .filter(parameter -> !parameter.hasParameterAnnotations())
             .findFirst()
             .map(parameter -> arguments[parameter.getParameterIndex()])
             .orElse(null);
     }
-
 
     private static void requestHeaders(String[] headers, BodyBuilder builder) {
         Stream.of(headers)
@@ -189,6 +187,5 @@ class RestClientInterceptorHelper {
                         convertToString(new TypeDescriptor(parameter), arguments[parameter.getParameterIndex()])));
         }
     }
-
 
 }

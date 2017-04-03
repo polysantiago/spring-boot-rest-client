@@ -42,7 +42,7 @@ class AsyncRequestHelper {
             return new LocationFutureAdapter<>(listenableFuture);
         }
         if (ResolvableTypeUtils.typeIs(resolvedType, Optional.class)) {
-            return new OptionalTypeFutureAdapter<T>(toOptional(listenableFuture));
+            return new OptionalTypeFutureAdapter<>(toOptional(listenableFuture));
         }
         return new ResponseFutureAdapter<>(listenableFuture);
     }

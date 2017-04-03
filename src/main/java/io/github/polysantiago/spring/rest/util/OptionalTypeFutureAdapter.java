@@ -19,7 +19,6 @@ public class OptionalTypeFutureAdapter<T> extends ResponseFutureAdapter<Optional
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void addCallback(SuccessCallback<? super Optional<T>> successCallback, FailureCallback failureCallback) {
         super.addCallback(successCallback, throwable -> {
             if (isNotFoundException(throwable)) {

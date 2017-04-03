@@ -16,9 +16,9 @@ public class SyntheticParametrizedTypeReference<T> extends ParameterizedTypeRefe
 
     public static <T> SyntheticParametrizedTypeReference<T> fromResolvableType(ResolvableType resolvedType) {
         if (resolvedType.hasGenerics()) {
-            return new SyntheticParametrizedTypeReference<T>(new SyntheticParametrizedType(resolvedType));
+            return new SyntheticParametrizedTypeReference<>(new SyntheticParametrizedType(resolvedType));
         }
-        return new SyntheticParametrizedTypeReference<T>(resolvedType.getRawClass());
+        return new SyntheticParametrizedTypeReference<>(resolvedType.getRawClass());
     }
 
 }

@@ -143,7 +143,6 @@ Retry
 
 The rest client library can be used with Spring Retry. Just by adding the `org.springframework.retry:spring-retry` 
 library as a dependency and `@EnableRetry` in your configuration, the retry functionality will be enabled.
-Make sure that `org.springframework.boot:spring-boot-starter-aop` is available in order to enable proxying capabilities.
 By default, calls are retried on `HTTP 503 SERVICE UNAVAILABLE` and `IOException` but you can configure your own:
 
 ```java

@@ -40,12 +40,11 @@ dependencyManagement {
 dependencies {
     compile("org.springframework.boot:spring-boot-autoconfigure")
     compile("org.springframework.boot:spring-boot-starter-logging")
-    compile("org.springframework:spring-web")
     compile("org.springframework:spring-webmvc")
+    compile('org.springframework:spring-aop')
+    compile('org.aspectj:aspectjweaver')
 
-    compile 'org.springframework:spring-aop', optional
     compile 'org.springframework.retry:spring-retry', optional
-    compile 'org.aspectj:aspectjweaver', optional
 
     provided 'org.projectlombok:lombok'
     compile 'org.apache.commons:commons-lang3:3.5'

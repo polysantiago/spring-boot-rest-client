@@ -60,7 +60,7 @@ class RestClientsRegistrar implements ImportBeanDefinitionRegistrar, ResourceLoa
 
         final Class<?>[] clients = annotationAttributes == null ? null : (Class<?>[]) annotationAttributes.get("clients");
 
-        if (isEmpty(clients)) {
+        if (clients == null || isEmpty(clients)) {
             scanner.addIncludeFilter(annotationTypeFilter);
             basePackages = getBasePackages(metadata);
         } else {

@@ -35,12 +35,16 @@ class RestClientInterceptor implements MethodInterceptor {
             .buildRequest(serviceUrl);
 
         if (ResolvableTypeUtils.returnTypeIs(method, ListenableFuture.class)) {
-            return asyncRequestHelper.executeAsyncRequest(method, requestEntity);
+            return executeAsync(method, requestEntity);
         }
         if (ResolvableTypeUtils.returnTypeIs(method, CompletableFuture.class)) {
-            return toCompletableFuture(asyncRequestHelper.executeAsyncRequest(method, requestEntity));
+            return toCompletableFuture(executeAsync(method, requestEntity));
         }
         return syncRequestHelper.executeRequest(methodInvocation, requestEntity);
+    }
+
+    private ListenableFuture<?> executeAsync(Method method, RequestEntity<Object> requestEntity) {
+        return asyncRequestHelper.executeAsyncRequest(method, requestEntity);
     }
 
 }

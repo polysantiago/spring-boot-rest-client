@@ -34,7 +34,7 @@ class SyncRequestHelper {
     @Setter
     private boolean retryEnabled;
 
-    Object executeRequest(MethodInvocation invocation, RequestEntity<Object> requestEntity) {
+    <T> Object executeRequest(MethodInvocation invocation, RequestEntity<T> requestEntity) {
         try {
             return executeRequestInternal(invocation, requestEntity);
         } catch (HttpStatusCodeException ex) {
@@ -51,7 +51,7 @@ class SyncRequestHelper {
         return ex;
     }
 
-    private Object handleHttpStatusCodeException(Method method, HttpStatusCodeException ex) {
+    private <T> Optional<T> handleHttpStatusCodeException(Method method, HttpStatusCodeException ex) {
         HttpStatus statusCode = ex.getStatusCode();
         if (ResolvableTypeUtils.returnTypeIs(method, Optional.class) && statusCode.equals(HttpStatus.NOT_FOUND)) {
             return Optional.empty();
@@ -62,7 +62,7 @@ class SyncRequestHelper {
         throw ex;
     }
 
-    private Object executeRequestInternal(MethodInvocation invocation, RequestEntity<Object> requestEntity) {
+    private <T> Object executeRequestInternal(MethodInvocation invocation, RequestEntity<T> requestEntity) {
         Method method = invocation.getMethod();
         if (hasPostLocation(method)) {
             return postForLocation(requestEntity, method);
@@ -83,18 +83,18 @@ class SyncRequestHelper {
         return AnnotationUtils.findAnnotation(method, PostForLocation.class) != null;
     }
 
-    private URI postForLocation(RequestEntity<Object> requestEntity, Method method) {
+    private <T> URI postForLocation(RequestEntity<T> requestEntity, Method method) {
         if (!ResolvableTypeUtils.returnTypeIs(method, URI.class)) {
             throw new RuntimeException("Method annotated with @PostForLocation must return URI");
         }
         return restTemplate.exchange(requestEntity, Object.class).getHeaders().getLocation();
     }
 
-    private ResponseEntity<?> exchangeForResponseEntity(ResolvableType resolvedType, RequestEntity<Object> requestEntity) {
+    private <T> ResponseEntity<T> exchangeForResponseEntity(ResolvableType resolvedType, RequestEntity<T> requestEntity) {
         return restTemplate.exchange(requestEntity, SyntheticParametrizedTypeReference.fromResolvableType(resolvedType.getGeneric(0)));
     }
 
-    private Object extractBodyNullSafe(ResponseEntity<?> responseEntity) {
+    private <T> T extractBodyNullSafe(ResponseEntity<T> responseEntity) {
         return Optional.ofNullable(responseEntity).map(ResponseEntity::getBody).orElse(null);
     }
 
