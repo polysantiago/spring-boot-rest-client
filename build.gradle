@@ -89,8 +89,8 @@ publishing {
             }
 
             credentials {
-                username = sonatypeUsername
-                password = sonatypePassword
+                username = hasProperty('sonatypeUsername') ? sonatypeUsername : System.getenv('sonatypeUsername')
+                password = hasProperty('sonatypePassword') ? sonatypePassword : System.getenv('sonatypePassword')
             }
         }
     }
