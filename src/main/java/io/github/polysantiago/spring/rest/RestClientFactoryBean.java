@@ -11,7 +11,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.format.support.FormattingConversionService;
-import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 import org.springframework.util.Assert;
 import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
@@ -63,10 +62,7 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
             conversionService,
             getServiceUrl(context));
 
-        retryInterceptor().ifPresent(retryOperationsInterceptor -> {
-            proxyFactory.addAdvice(retryOperationsInterceptor);
-            interceptor.setRetryEnabled(true);
-        });
+        retryConfigurer().ifPresent(configurer -> configurer.configure(proxyFactory, interceptor));
 
         proxyFactory.addAdvice(interceptor);
 
@@ -93,9 +89,9 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         return URI.create(url);
     }
 
-    private Optional<RetryOperationsInterceptor> retryInterceptor() {
+    private Optional<RestClientRetryConfigurer> retryConfigurer() {
         try {
-            return Optional.of(applicationContext.getBean("restClientRetryInterceptor", RetryOperationsInterceptor.class));
+            return Optional.of(applicationContext.getBean(RestClientRetryConfigurer.class));
         } catch (NoSuchBeanDefinitionException ex) {
             return Optional.empty();
         }

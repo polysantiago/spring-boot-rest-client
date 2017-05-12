@@ -1,6 +1,6 @@
 package io.github.polysantiago.spring.rest;
 
-import io.github.polysantiago.spring.rest.retry.RetryInterceptor;
+import io.github.polysantiago.spring.rest.retry.RetryOperationsInterceptorFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -25,7 +25,7 @@ import java.util.List;
 
 @Configuration
 @EnableConfigurationProperties(RestClientProperties.class)
-@ConditionalOnBean(annotation = { EnableRestClients.class })
+@ConditionalOnBean(annotation = {EnableRestClients.class})
 @AutoConfigureAfter(WebMvcAutoConfiguration.class)
 @RequiredArgsConstructor
 public class RestClientAutoConfiguration {
@@ -63,11 +63,16 @@ public class RestClientAutoConfiguration {
     @ConditionalOnBean(RetryConfiguration.class)
     protected static class RestClientRetryConfiguration {
 
+        @Bean("restClientRetryInterceptor")
+        @ConditionalOnMissingBean
+        public RetryOperationsInterceptorFactory retryOperationInterceptorFactory(RestClientProperties properties) {
+            return new RetryOperationsInterceptorFactory(properties);
+        }
+
         @Bean
-        @ConditionalOnMissingBean(name = "restClientRetryInterceptor")
-        public RetryOperationsInterceptor restClientRetryInterceptor(RestClientProperties properties) {
-            RetryInterceptor retryInterceptor = new RetryInterceptor(properties.getRetry());
-            return retryInterceptor.buildInterceptor();
+        @ConditionalOnMissingBean
+        public RestClientRetryConfigurer restClientRetryConfigurer(RetryOperationsInterceptor restClientRetryInterceptor) {
+            return new RestClientRetryConfigurer(restClientRetryInterceptor);
         }
 
     }
