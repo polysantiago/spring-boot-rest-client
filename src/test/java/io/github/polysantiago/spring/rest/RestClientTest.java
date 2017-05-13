@@ -24,7 +24,6 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -335,7 +334,7 @@ public class RestClientTest {
         Foo foo = new Foo("bar");
 
         String uri = UriComponentsBuilder.fromUriString("http://localhost/")
-            .queryParam("date", today.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)))
+            .queryParam("date", today.format(DateTimeFormatter.ISO_DATE))
             .queryParam("obj", foo.toString())
             .toUriString();
 
