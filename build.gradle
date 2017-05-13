@@ -6,11 +6,14 @@ plugins {
     id 'signing'
     id 'nebula.optional-base' version '3.0.3'
     id 'nebula.provided-base' version '3.0.3'
+    id "io.codearte.nexus-staging" version "0.8.0"
 }
 
 ext {
     pomFile = file("${project.buildDir}/generated-pom.xml")
     isReleaseVersion = !(project.version =~ /-SNAPSHOT$/)
+    ossrhUser = project.hasProperty('sonatypeUsername') ? sonatypeUsername : System.getenv('sonatypeUsername')
+    ossrhPassword = project.hasProperty('sonatypePassword') ? sonatypePassword : System.getenv('sonatypePassword')
 }
 
 idea {
@@ -20,6 +23,11 @@ idea {
 
         vcs = 'Git'
     }
+}
+
+nexusStaging {
+    username = ossrhUser
+    password = ossrhPassword
 }
 
 tasks.withType(JavaCompile) {
@@ -89,8 +97,8 @@ publishing {
             }
 
             credentials {
-                username = hasProperty('sonatypeUsername') ? sonatypeUsername : System.getenv('sonatypeUsername')
-                password = hasProperty('sonatypePassword') ? sonatypePassword : System.getenv('sonatypePassword')
+                username = ossrhUser
+                password = ossrhPassword
             }
         }
     }
@@ -115,7 +123,7 @@ publishing {
                 }.each { it.scope*.value = 'compile' }
 
                 asNode().children().last() + {
-                    resolveStrategy = Closure.DELEGATE_FIRST
+                    resolveStrategy = DELEGATE_FIRST
                     name "${project.name}"
                     description "${project.description}"
                     url 'https://github.com/polysantiago/spring-boot-rest-client'
