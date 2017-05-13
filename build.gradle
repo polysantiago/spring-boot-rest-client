@@ -10,7 +10,7 @@ plugins {
 }
 
 ext {
-    pomFile = file("${project.buildDir}/generated-pom.xml")
+    pomFile = file("${project.buildDir}/publications/maven/pom-default.xml")
     isReleaseVersion = !(project.version =~ /-SNAPSHOT$/)
     ossrhUser = project.hasProperty('sonatypeUsername') ? sonatypeUsername : System.getenv('sonatypeUsername')
     ossrhPassword = project.hasProperty('sonatypePassword') ? sonatypePassword : System.getenv('sonatypePassword')
@@ -43,7 +43,7 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom 'io.spring.platform:platform-bom:Brussels-SR1'
+        mavenBom 'io.spring.platform:platform-bom:Brussels-SR2'
     }
 }
 
@@ -64,6 +64,13 @@ dependencies {
     testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
     testCompile('org.assertj:assertj-core:3.6.2')
+}
+
+tasks.withType(Jar) {
+    from(project.projectDir) {
+        include 'LICENSE'
+        into 'META-INF'
+    }
 }
 
 task sourceJar(type: Jar) {
@@ -104,16 +111,6 @@ publishing {
     }
     publications {
         maven(MavenPublication) {
-            from components.java
-
-            artifact sourceJar {
-                classifier "sources"
-            }
-
-            artifact javadocJar {
-                classifier "javadoc"
-            }
-
             pom.withXml {
                 // fix maven-publish issue when all maven dependencies are placed into runtime scope
                 asNode().dependencies.dependency.findAll() {
@@ -151,19 +148,18 @@ publishing {
                 }
             }
 
+            from components.java
+
+            artifact sourceJar {
+                classifier "sources"
+            }
+
+            artifact javadocJar {
+                classifier "javadoc"
+            }
+
             // Sign the pom.xml and artifacts.
             if (signing.required) {
-                // Sign the pom.xml.
-                pom.withXml {
-                    writeTo(project.ext.pomFile)
-                    def pomAscFile = signing.sign(project.ext.pomFile).signatureFiles[0]
-                    artifact(pomAscFile) {
-                        classifier = null
-                        extension = 'pom.asc'
-                    }
-                    project.ext.pomFile.delete()
-                }
-
                 // Sign the artifacts.
                 project.tasks.signArchives.signatureFiles.each {
                     artifact(it) {
@@ -175,6 +171,16 @@ publishing {
                         }
                         extension = 'jar.asc'
                     }
+                }
+            }
+        }
+
+        if (signing.required) {
+            gpgPom(MavenPublication) {
+                def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+                artifact(pomAscFile) {
+                    classifier = null
+                    extension = 'pom.asc'
                 }
             }
         }
