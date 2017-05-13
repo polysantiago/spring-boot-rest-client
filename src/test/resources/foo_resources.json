@@ -1,0 +1,22 @@
+{
+  "_embedded": {
+    "foos": [
+      {
+        "bar": "some-value",
+        "_links": {
+          "self": {
+            "href": "http://some-api/foos/1234"
+          },
+          "foo": {
+            "href": "http://some-api/foos/1234"
+          }
+        }
+      }
+    ]
+  },
+  "_links": {
+    "self": {
+      "href": "http://some-api/foos"
+    }
+  }
+}

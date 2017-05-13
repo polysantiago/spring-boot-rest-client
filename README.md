@@ -2,6 +2,7 @@ Spring Boot Rest Client
 =======
 
 [![Build Status](https://travis-ci.org/polysantiago/spring-boot-rest-client.svg?branch=master)](https://travis-ci.org/polysantiago/spring-boot-rest-client)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/io.github.polysantiago/spring-boot-rest-client/badge.svg)](https://maven-badges.herokuapp.com/maven-central/io.github.polysantiago/spring-boot-rest-client)
 [![GitHub issues](https://img.shields.io/github/issues/polysantiago/spring-boot-rest-client.svg)](https://github.com/polysantiago/spring-boot-rest-client/issues)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/polysantiago/spring-boot-rest-client/master/LICENSE)
 

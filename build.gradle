@@ -61,6 +61,7 @@ dependencies {
     compile 'net.javacrumbs.future-converter:future-converter-spring-java8:1.1.0'
 
     testCompile("org.springframework.boot:spring-boot-starter-test")
+    testCompile('org.springframework.boot:spring-boot-starter-hateoas')
     testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
     testCompile('org.assertj:assertj-core:3.6.2')
