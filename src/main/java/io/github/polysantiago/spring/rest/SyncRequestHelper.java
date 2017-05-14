@@ -7,7 +7,6 @@ import io.github.polysantiago.spring.rest.util.ResolvableTypeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import org.aopalliance.intercept.MethodInvocation;
-import org.springframework.core.GenericTypeResolver;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpEntity;
@@ -30,6 +29,7 @@ class SyncRequestHelper {
 
     private final RestClientSpecification specification;
     private final RestTemplate restTemplate;
+    private final Class<?> implementingClass;
 
     @Setter
     private boolean retryEnabled;
@@ -67,16 +67,13 @@ class SyncRequestHelper {
         if (hasPostLocation(method)) {
             return postForLocation(requestEntity, method);
         }
-        ResolvableType resolvedType = ResolvableType.forMethodReturnType(method);
+        ResolvableType resolvedType = ResolvableType.forMethodReturnType(method, implementingClass);
 
         if (ResolvableTypeUtils.returnTypeIsAnyOf(method, HttpEntity.class, ResponseEntity.class)) {
             return exchangeForResponseEntity(resolvedType, requestEntity);
-        } else if (ResolvableTypeUtils.returnTypeIsGeneric(method)) {
-            SyntheticParametrizedTypeReference<?> responseType = SyntheticParametrizedTypeReference.fromResolvableType(resolvedType);
-            return extractBodyNullSafe(restTemplate.exchange(requestEntity, responseType));
         }
-        Class<?> returnType = GenericTypeResolver.resolveReturnTypeForGenericMethod(method, invocation.getArguments(), null);
-        return extractBodyNullSafe(restTemplate.exchange(requestEntity, returnType));
+        SyntheticParametrizedTypeReference<T> responseType = SyntheticParametrizedTypeReference.fromResolvableType(resolvedType);
+        return extractBodyNullSafe(restTemplate.exchange(requestEntity, responseType));
     }
 
     private boolean hasPostLocation(Method method) {

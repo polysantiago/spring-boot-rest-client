@@ -45,7 +45,10 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 public class RestClientTest {
 
     @Autowired
-    private FooClient fooClient;
+    private FooClient<Foo> fooClient;
+
+    @Autowired
+    private FooChildClient fooChildClient;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -63,7 +66,7 @@ public class RestClientTest {
     }
 
     @RestClient(value = "localhost", url = "${localhost.uri}")
-    interface FooClient {
+    interface FooClient<T> {
 
         @GetMapping
         String defaultFoo();
@@ -78,7 +81,7 @@ public class RestClientTest {
         List<Foo> fooList();
 
         @GetMapping(value = "/fooListParams")
-        Void fooListArgument(@RequestParam("myList") List<String> params);
+        void fooListArgument(@RequestParam("myList") List<String> params);
 
         @GetMapping(value = "/fooArray")
         Foo[] fooArray();
@@ -93,25 +96,25 @@ public class RestClientTest {
         String getFooWithAcceptAtom(@PathVariable("id") String id);
 
         @PostMapping(value = "/")
-        Void bar(String body);
+        void bar(String body);
 
         @PostMapping(value = "/", consumes = MediaType.APPLICATION_JSON_VALUE)
-        Void barWithContentType(Foo foo);
+        void barWithContentType(Foo foo);
 
         @GetMapping(value = "/")
-        Void barWithObjectAsParameters(
+        void barWithObjectAsParameters(
             @RequestHeader("header") Foo foo1,
             @RequestParam("date") LocalDate date,
             @RequestParam("obj") Foo foo2);
 
         @PutMapping
-        Void barPut(String body);
+        void barPut(String body);
 
         @PatchMapping
-        Void barPatch(String body);
+        void barPatch(String body);
 
         @DeleteMapping
-        Void barDelete(String body);
+        void barDelete(String body);
 
         @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
         Optional<Foo> tryNonEmptyOptional();
@@ -123,7 +126,7 @@ public class RestClientTest {
         byte[] raw();
 
         @GetMapping(headers = "Some-Header:some-value")
-        Void fooWithHeaders(@RequestHeader("User-Id") String userId,
+        void fooWithHeaders(@RequestHeader("User-Id") String userId,
                             @RequestHeader("Password") String password);
 
         @GetMapping
@@ -133,7 +136,7 @@ public class RestClientTest {
         HttpEntity<String> getHttpEntity();
 
         @GetMapping(value = "/{id}")
-        <T> T getParameterized(@PathVariable("id") String id, Class<T> type);
+        T getParameterized(@PathVariable("id") String id);
 
         @PostForLocation("/postForLocation")
         URI postForLocation(String body);
@@ -154,6 +157,11 @@ public class RestClientTest {
                                                       @RequestBody String body);
     }
 
+    @RestClient(value = "localhost", url = "${localhost.uri}")
+    interface FooChildClient extends FooClient<Foo> {
+
+    }
+
     @Before
     public void setUp() throws Exception {
         server = createServer(restTemplate);
@@ -172,7 +180,7 @@ public class RestClientTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
 
-        Foo response = fooClient.getParameterized("some-id", Foo.class);
+        Foo response = fooChildClient.getParameterized("some-id");
 
         assertThat(response).isEqualTo(foo);
     }

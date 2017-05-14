@@ -25,9 +25,10 @@ import static io.github.polysantiago.spring.rest.support.SyntheticParametrizedTy
 class AsyncRequestHelper {
 
     private final AsyncRestTemplate asyncRestTemplate;
+    private final Class<?> implementingClass;
 
     <T> ListenableFuture<?> executeAsyncRequest(Method method, RequestEntity<T> requestEntity) {
-        ResolvableType resolvedType = ResolvableType.forMethodReturnType(method).getGeneric(0);
+        ResolvableType resolvedType = ResolvableType.forMethodReturnType(method, implementingClass).getGeneric(0);
 
         SyntheticParametrizedTypeReference<T> wrappedReturnType = fromResolvableType(resolvedType);
         if (ResolvableTypeUtils.typeIsAnyOf(resolvedType, HttpEntity.class, ResponseEntity.class)) {

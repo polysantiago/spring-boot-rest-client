@@ -22,7 +22,7 @@ import java.util.Optional;
 import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 @Setter
-class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, ApplicationContextAware {
+class RestClientFactoryBean<T> implements FactoryBean<T>, InitializingBean, ApplicationContextAware {
 
     private static final String PREFERRED_CONVERSION_SERVICE = "mvcConversionService";
     private static final FormattingConversionService DEFAULT_CONVERSION_SERVICE = new DefaultFormattingConversionService();
@@ -32,7 +32,7 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
     private String url;
 
     @Getter
-    private Class<?> objectType;
+    private Class<T> objectType;
 
     private ApplicationContext applicationContext;
 
@@ -41,8 +41,9 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         Assert.hasText(this.name, "Name must be set");
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public Object getObject() throws Exception {
+    public T getObject() throws Exception {
         RestTemplate restTemplate = applicationContext.getBean(RestTemplate.class);
         AsyncRestTemplate asyncRestTemplate = applicationContext.getBean(AsyncRestTemplate.class);
         RestClientContext context = applicationContext.getBean(RestClientContext.class);
@@ -53,8 +54,8 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
         ProxyFactory proxyFactory = new ProxyFactory();
         proxyFactory.addInterface(objectType);
 
-        SyncRequestHelper syncRequestHelper = new SyncRequestHelper(specification, restTemplate);
-        AsyncRequestHelper asyncRequestHelper = new AsyncRequestHelper(asyncRestTemplate);
+        SyncRequestHelper syncRequestHelper = new SyncRequestHelper(specification, restTemplate, objectType);
+        AsyncRequestHelper asyncRequestHelper = new AsyncRequestHelper(asyncRestTemplate, objectType);
 
         RestClientInterceptor interceptor = new RestClientInterceptor(
             syncRequestHelper,
@@ -66,7 +67,7 @@ class RestClientFactoryBean implements FactoryBean<Object>, InitializingBean, Ap
 
         proxyFactory.addAdvice(interceptor);
 
-        return proxyFactory.getProxy(applicationContext.getClassLoader());
+        return (T) proxyFactory.getProxy(applicationContext.getClassLoader());
     }
 
     private FormattingConversionService getConversionService() {
