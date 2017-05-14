@@ -46,8 +46,28 @@ spring:
         foo: http://foo.bar.se
 ```
     
-You can later use `@Autowired` and just call `fooClient.getFoo()` which will make an `HTTP GET` call to `http://foo.bar.se`
+You can later use `@Autowired` (or constructor injection) and just call `fooClient.getFoo()` which will 
+make an `HTTP GET` call to `http://foo.bar.se`
 
+```java
+@Component
+public class RestClientConsumer {
+    
+    private final FooClient fooClient;
+    
+    RestClientConsumer(FooClient fooClient) {
+        this.fooClient = fooClient;
+    }
+    
+    public Foo getFoo() {
+        return fooClient.getFoo();
+    }
+    
+}
+```
+
+Structure
+-----
 `@RequestMapping` values have the following correspondence to the resulting HTTP call:
     
 * `value()` - Path appended to the host
@@ -89,6 +109,29 @@ interface FooClient {
 }
 ```
 
+Please note that retry functionality is currently not supported for asynchronous requests.
+
+Generics
+-----
+Generic declarations are supported as long as the "implementing" interface contains a concrete class.
+
+Working example:
+
+```java
+interface FooBaseClient<T> {
+    
+    @GetMapping(value = "/{id}")
+    T getParameterized(@PathVariable("id") String id);
+    
+}
+```
+```java
+@RestClient("foo")
+interface FooClient extends FooBaseClient<Foo> {
+    
+}
+```
+
 HTTP Entities
 -----
 If for some reason you do not wish to have the body extracted from your response, you can wrap your response type in
@@ -117,11 +160,13 @@ Spring Boot Rest Client will return an `Optional.empty()` upon a `HTTP 404 NOT F
 @RestClient("foo")
 interface FooClient {
     
-        @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
-        Optional<Foo> getOptional();
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    Optional<Foo> getOptional();
     
 }
 ```
+
+Please note that **default** methods in interfaces declaring `@RestClient` are currently not supported.
 
 HATEOAS Support
 -----
@@ -135,6 +180,30 @@ interface FooClient {
     
     @PostForLocation("/postForLocation")
     URI postForLocation(String body);
+    
+}
+```
+
+Additionally, by including [Spring HATEOAS](https://github.com/spring-projects/spring-hateoas) as a dependency, you can 
+use Spring HATEOAS resource support:
+
+```java
+public class FooResource extends ResourceSupport {
+    
+}
+```
+```java
+@RestClient("foo")
+interface FooClient {
+  
+    @GetMapping(value = "/foo/{id}", produces = MediaTypes.HAL_JSON_VALUE)
+    FooResource getFoo(@PathVariable("id") String id);
+    
+    @GetMapping(value = "/foos", produces = MediaTypes.HAL_JSON_VALUE)
+    Resources<FooResource> getFoos();
+    
+    @GetMapping(value = "/pagedFoos", produces = MediaTypes.HAL_JSON_VALUE)
+    PagedResources<FooResource> getPagedFoos();
     
 }
 ```

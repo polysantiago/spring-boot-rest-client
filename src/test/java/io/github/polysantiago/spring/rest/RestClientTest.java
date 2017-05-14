@@ -45,7 +45,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 public class RestClientTest {
 
     @Autowired
-    private FooClient<Foo> fooClient;
+    private FooClient fooClient;
 
     @Autowired
     private FooChildClient fooChildClient;
@@ -66,7 +66,7 @@ public class RestClientTest {
     }
 
     @RestClient(value = "localhost", url = "${localhost.uri}")
-    interface FooClient<T> {
+    interface FooClient {
 
         @GetMapping
         String defaultFoo();
@@ -135,9 +135,6 @@ public class RestClientTest {
         @GetMapping
         HttpEntity<String> getHttpEntity();
 
-        @GetMapping(value = "/{id}")
-        T getParameterized(@PathVariable("id") String id);
-
         @PostForLocation("/postForLocation")
         URI postForLocation(String body);
 
@@ -157,8 +154,15 @@ public class RestClientTest {
                                                       @RequestBody String body);
     }
 
+    interface FooParent<T> {
+
+        @GetMapping(value = "/{id}")
+        T getParameterized(@PathVariable("id") String id);
+
+    }
+
     @RestClient(value = "localhost", url = "${localhost.uri}")
-    interface FooChildClient extends FooClient<Foo> {
+    interface FooChildClient extends FooParent<Foo> {
 
     }
 
