@@ -1,13 +1,14 @@
 package io.github.polysantiago.spring.rest;
 
-import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
@@ -17,11 +18,11 @@ import org.springframework.core.io.Resource;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resources;
-import org.springframework.hateoas.hal.Jackson2HalModule;
+import org.springframework.hateoas.config.EnableHypermediaSupport;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.converter.HttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -31,10 +32,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.client.RestTemplate;
 
-import static java.util.Collections.singletonList;
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.client.MockRestServiceServer.createServer;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 @ActiveProfiles("test")
@@ -44,24 +47,32 @@ public class RestClientHateoasTest {
 
     private static final String SINGLE_RESOURCE = "/foo/{id}";
     private static final String COLLECTION_RESOURCE = "/foos";
+    private static final String OPTIONAL_COLLECTION_RESOURCE = "/foosOptional";
     private static final String PAGED_RESOURCE = "/foosPaged";
 
     @Configuration
     @EnableAutoConfiguration
-    @EnableRestClients(basePackageClasses = RestClientTest.FooClient.class)
-    protected static class ContextConfiguration {
+    @EnableRestClients(basePackageClasses = FooClient.class)
+    @EnableHypermediaSupport(type = EnableHypermediaSupport.HypermediaType.HAL)
+    static class ContextConfiguration {
 
         @Bean
-        Module halModule() {
-            return new Jackson2HalModule();
-        }
+        BeanPostProcessor halObjectMapperPostProcessor(Jackson2ObjectMapperBuilder builder) {
+            return new BeanPostProcessor() {
+                @Override
+                public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+                    return bean;
+                }
 
-        @Bean
-        HttpMessageConverter halMessageConverter(ObjectMapper objectMapper) {
-            MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
-            converter.setSupportedMediaTypes(singletonList(MediaTypes.HAL_JSON));
-            converter.setObjectMapper(objectMapper);
-            return converter;
+                @Override
+                public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+                    if (!"_halObjectMapper".equals(beanName)) {
+                        return bean;
+                    }
+                    builder.configure((ObjectMapper) bean);
+                    return bean;
+                }
+            };
         }
 
     }
@@ -74,6 +85,9 @@ public class RestClientHateoasTest {
 
         @GetMapping(value = COLLECTION_RESOURCE, produces = MediaTypes.HAL_JSON_VALUE)
         Resources<FooResource> getFoos();
+
+        @GetMapping(value = OPTIONAL_COLLECTION_RESOURCE, produces = MediaTypes.HAL_JSON_VALUE)
+        Optional<Resources<FooResource>> getOptionalFoos();
 
         @GetMapping(value = PAGED_RESOURCE, produces = MediaTypes.HAL_JSON_VALUE)
         PagedResources<FooResource> getPagedFoos();
@@ -131,6 +145,30 @@ public class RestClientHateoasTest {
         assertThat(foos.getId()).isNotNull();
         assertThat(foos.getContent()).isNotEmpty();
         assertThat(foos.getContent()).containsExactly(new FooResource("some-value"));
+    }
+
+    @Test
+    public void testOptionalCollectionResource_notFound() throws Exception {
+        mockServerHalResponse(OPTIONAL_COLLECTION_RESOURCE)
+            .andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        Optional<Resources<FooResource>> optionalFoos = fooClient.getOptionalFoos();
+
+        assertThat(optionalFoos).isNotPresent();
+    }
+
+    @Test
+    public void testOptionalCollectionResource_found() throws Exception {
+        mockServerHalResponse(OPTIONAL_COLLECTION_RESOURCE, fooResourcesJson);
+
+        Optional<Resources<FooResource>> optionalFoos = fooClient.getOptionalFoos();
+
+        assertThat(optionalFoos).isPresent();
+        assertThat(optionalFoos).hasValueSatisfying(resources -> assertThat(resources).isNotEmpty());
+        assertThat(optionalFoos)
+            .hasValueSatisfying(resources -> assertThat(resources)
+                .first()
+                .isEqualToComparingOnlyGivenFields(new Foo("some-value"), "bar"));
     }
 
     @Test

@@ -19,7 +19,16 @@ public final class SyntheticParametrizedType implements ParameterizedType, Seria
 
     SyntheticParametrizedType(ResolvableType resolvedType) {
         this.rawType = resolvedType.getRawClass();
-        this.actualTypeArguments = resolvedType.resolveGenerics();
+        this.actualTypeArguments = resolveGenerics(resolvedType);
+    }
+
+    private Type[] resolveGenerics(ResolvableType resolvableType) {
+        if (resolvableType.hasGenerics()) {
+            return Arrays.stream(resolvableType.getGenerics())
+                .map(SyntheticParametrizedType::new)
+                .toArray(Type[]::new);
+        }
+        return resolvableType.resolveGenerics();
     }
 
     @Override
