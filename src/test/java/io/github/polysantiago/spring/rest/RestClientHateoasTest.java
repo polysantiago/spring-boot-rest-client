@@ -83,6 +83,9 @@ public class RestClientHateoasTest {
         @GetMapping(value = SINGLE_RESOURCE, produces = MediaTypes.HAL_JSON_VALUE)
         FooResource getFoo(@PathVariable("id") String id);
 
+        @GetMapping(value = SINGLE_RESOURCE, produces = MediaTypes.HAL_JSON_VALUE)
+        org.springframework.hateoas.Resource<Foo> getFooWrapped(@PathVariable("id") String id);
+
         @GetMapping(value = COLLECTION_RESOURCE, produces = MediaTypes.HAL_JSON_VALUE)
         Resources<FooResource> getFoos();
 
@@ -134,6 +137,22 @@ public class RestClientHateoasTest {
         assertThat(foo).isNotNull();
         assertThat(foo.getId()).isNotNull();
         assertThat(foo.getLink("foo").getHref()).isNotEmpty();
+        assertThat(foo.getBar()).isEqualTo("some-value");
+    }
+
+    @Test
+    public void testSingleResourceWrapped() throws Exception {
+        String endpoint = helper.replacePlaceholders(SINGLE_RESOURCE, s -> "1234");
+
+        mockServerHalResponse(endpoint, fooResourceJson);
+
+        org.springframework.hateoas.Resource<Foo> resource = fooClient.getFooWrapped("1234");
+
+        assertThat(resource).isNotNull();
+        assertThat(resource.getId()).isNotNull();
+        assertThat(resource.getLink("foo").getHref()).isNotEmpty();
+        assertThat(resource.getContent()).isNotNull();
+        assertThat(resource.getContent().getBar()).isEqualTo("some-value");
     }
 
     @Test

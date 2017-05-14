@@ -199,10 +199,13 @@ interface FooClient {
     @GetMapping(value = "/foo/{id}", produces = MediaTypes.HAL_JSON_VALUE)
     FooResource getFoo(@PathVariable("id") String id);
     
+    @GetMapping(value = "/foo/{id}", produces = MediaTypes.HAL_JSON_VALUE)
+    Resource<Foo> getFooWrapped(@PathVariable("id") String id);
+    
     @GetMapping(value = "/foos", produces = MediaTypes.HAL_JSON_VALUE)
     Resources<FooResource> getFoos();
     
-    @GetMapping(value = "/pagedFoos", produces = MediaTypes.HAL_JSON_VALUE)
+    @GetMapping(value = "/foos", produces = MediaTypes.HAL_JSON_VALUE)
     PagedResources<FooResource> getPagedFoos();
     
 }
