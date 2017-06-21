@@ -1,13 +1,12 @@
 plugins {
-    id 'java'
+    id 'java-library'
     id 'idea'
     id 'jacoco'
-    id "io.spring.dependency-management" version "1.0.2.RELEASE"
+    id "io.spring.dependency-management" version "1.0.3.RELEASE"
     id 'maven-publish'
     id 'signing'
-    id 'nebula.optional-base' version '3.0.3'
-    id 'nebula.provided-base' version '3.0.3'
-    id "io.codearte.nexus-staging" version "0.8.0"
+    id 'nebula.optional-base' version '3.2.0'
+    id "io.codearte.nexus-staging" version "0.9.0"
 }
 
 ext {
@@ -44,29 +43,30 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom 'io.spring.platform:platform-bom:Brussels-SR2'
+        mavenBom 'io.spring.platform:platform-bom:Brussels-SR3'
     }
 }
 
 dependencies {
-    compile("org.springframework.boot:spring-boot-autoconfigure")
-    compile("org.springframework.boot:spring-boot-starter-logging")
+    implementation("org.springframework.boot:spring-boot-autoconfigure")
+    implementation("org.springframework.boot:spring-boot-starter-logging")
     compileOnly('org.springframework.boot:spring-boot-configuration-processor')
-    compile("org.springframework:spring-webmvc")
-    compile('org.springframework:spring-aop')
-    compile('org.aspectj:aspectjweaver')
+    implementation("org.springframework:spring-webmvc")
+    implementation('org.springframework:spring-aop')
+    implementation('org.aspectj:aspectjweaver')
 
     compile 'org.springframework.retry:spring-retry', optional
 
-    provided 'org.projectlombok:lombok'
-    compile 'org.apache.commons:commons-lang3:3.5'
-    compile 'net.javacrumbs.future-converter:future-converter-spring-java8:1.1.0'
+    compileOnly 'org.projectlombok:lombok'
+    implementation 'org.apache.commons:commons-lang3:3.5'
+    implementation 'net.javacrumbs.future-converter:future-converter-spring-java8:1.1.0'
 
-    testCompile("org.springframework.boot:spring-boot-starter-test")
-    testCompile('org.springframework.boot:spring-boot-starter-hateoas')
-    testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
-    testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
-    testCompile('org.assertj:assertj-core:3.6.2')
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation('org.springframework.boot:spring-boot-starter-hateoas')
+    testImplementation("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+    testImplementation("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
+    testImplementation('org.assertj:assertj-core:3.8.0')
+    testCompileOnly('org.projectlombok:lombok')
 }
 
 tasks.withType(Jar) {
