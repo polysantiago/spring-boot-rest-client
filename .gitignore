@@ -1,21 +1,55 @@
-*.iml
-**/target/
-
-coverage-error.log
-
-**/build
-
-*.log
 .gradle
-schema
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+dependency-reduced-pom.xml
 
-src/test/generated-java
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
 
-.idea/*
-## Videocore shared settings:
-!/.idea/vcs.xml
-!/.idea/codeStyleSettings.xml
-!.idea/checkstyle-idea.xml
-!.idea/encodings.xml
-!.idea/sqldialects.xml
-!.idea/compiler.xml
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.ipr
+*.iml
+
+### NetBeans ###
+nbproject/private/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+### Eclipse ###
+*.eclipse
+*.project
+*.classpath
+.extract*
+.settings*
+
+### Plugins ###
+*.eclipse-pmd
+**.metadata
+*.pmd
+*.checkstyle
+*-result.html
+rebel_project.xml
+
+### npm ###
+node
+node_modules
+frontend-dest
+data/
+
+.DS_Store
+*.py~
+*.swp
+*.pyc
+*~
+target/
+*#
+*.log

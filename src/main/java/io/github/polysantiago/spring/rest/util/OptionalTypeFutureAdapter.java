@@ -1,16 +1,15 @@
 package io.github.polysantiago.spring.rest.util;
 
+import java.util.Optional;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.FailureCallback;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.SuccessCallback;
 import org.springframework.web.client.HttpClientErrorException;
-
-import java.util.Optional;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 public class OptionalTypeFutureAdapter<T> extends ResponseFutureAdapter<Optional<T>> {
 
@@ -22,7 +21,7 @@ public class OptionalTypeFutureAdapter<T> extends ResponseFutureAdapter<Optional
     public void addCallback(SuccessCallback<? super Optional<T>> successCallback, FailureCallback failureCallback) {
         super.addCallback(successCallback, throwable -> {
             if (isNotFoundException(throwable)) {
-                successCallback.onSuccess(Optional.<T>empty());
+                successCallback.onSuccess(Optional.empty());
             } else {
                 failureCallback.onFailure(throwable);
             }

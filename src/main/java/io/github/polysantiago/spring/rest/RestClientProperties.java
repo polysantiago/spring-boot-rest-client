@@ -1,13 +1,14 @@
 package io.github.polysantiago.spring.rest;
 
 import io.github.polysantiago.spring.rest.retry.RetrySettings;
-import lombok.Data;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 import java.util.HashMap;
 import java.util.Map;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@Data
+@Getter
+@Setter
 @ConfigurationProperties(prefix = RestClientProperties.PREFIX)
 public class RestClientProperties {
 

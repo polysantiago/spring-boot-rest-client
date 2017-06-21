@@ -1,14 +1,15 @@
 package io.github.polysantiago.spring.rest.support;
 
-import lombok.*;
+import java.lang.reflect.Type;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.ResolvableType;
 
-import java.lang.reflect.Type;
-
 @Getter
 @EqualsAndHashCode(callSuper = false)
-@ToString
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class SyntheticParametrizedTypeReference<T> extends ParameterizedTypeReference<T> {
 

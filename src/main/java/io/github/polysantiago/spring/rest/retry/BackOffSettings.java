@@ -1,8 +1,10 @@
 package io.github.polysantiago.spring.rest.retry;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
-@Data
+@Getter
+@Setter
 public class BackOffSettings {
 
     private long delay = 1000;

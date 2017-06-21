@@ -1,18 +1,12 @@
 package io.github.polysantiago.spring.rest.util;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import lombok.experimental.UtilityClass;
 import org.springframework.core.ResolvableType;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
-import java.util.Arrays;
-
 @UtilityClass
 public class ResolvableTypeUtils {
-
-    public static boolean returnTypeIsGeneric(Method method) {
-        return method.getGenericReturnType() instanceof ParameterizedType;
-    }
 
     public static boolean typeIsAnyOf(ResolvableType resolvableType, Class<?>... classes) {
         return Arrays.stream(classes).anyMatch(clazz -> typeIs(resolvableType, clazz));
@@ -23,7 +17,8 @@ public class ResolvableTypeUtils {
     }
 
     public static boolean returnTypeIs(Method method, Class<?> returnType) {
-        return ResolvableType.forClass(returnType).isAssignableFrom(ResolvableType.forMethodReturnType(method));
+        return ResolvableType.forClass(returnType)
+            .isAssignableFrom(ResolvableType.forMethodReturnType(method));
     }
 
     public static boolean returnTypeIsAnyOf(Method method, Class<?>... returnTypes) {

@@ -1,13 +1,13 @@
 package io.github.polysantiago.spring.rest.support;
 
-import lombok.Getter;
-import org.springframework.core.ResolvableType;
+import static java.util.stream.Collectors.joining;
 
 import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
-import java.util.stream.Collectors;
+import lombok.Getter;
+import org.springframework.core.ResolvableType;
 
 @Getter
 public final class SyntheticParametrizedType implements ParameterizedType, Serializable {
@@ -39,6 +39,7 @@ public final class SyntheticParametrizedType implements ParameterizedType, Seria
     @Override
     public String toString() {
         return String.format("%s<%s<%s>>", SyntheticParametrizedType.class.getName(), rawType.getTypeName(),
-            Arrays.stream(actualTypeArguments).map(Type::getTypeName).collect(Collectors.joining(",")));
+            Arrays.stream(actualTypeArguments).map(Type::getTypeName).collect(joining(",")));
     }
+
 }

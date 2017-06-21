@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'idea'
+    id 'jacoco'
     id "io.spring.dependency-management" version "1.0.2.RELEASE"
     id 'maven-publish'
     id 'signing'
@@ -50,6 +51,7 @@ dependencyManagement {
 dependencies {
     compile("org.springframework.boot:spring-boot-autoconfigure")
     compile("org.springframework.boot:spring-boot-starter-logging")
+    compileOnly('org.springframework.boot:spring-boot-configuration-processor')
     compile("org.springframework:spring-webmvc")
     compile('org.springframework:spring-aop')
     compile('org.aspectj:aspectjweaver')
