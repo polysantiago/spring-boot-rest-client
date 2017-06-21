@@ -180,7 +180,7 @@ publishing {
 
         if (signing.required) {
             gpgPom(MavenPublication) {
-                def pomAscFile = signing.sign(pomFile).signatureFiles[0]
+                def pomAscFile = signing.sign(project.ext.pomFile).signatureFiles[0]
                 artifact(pomAscFile) {
                     classifier = null
                     extension = 'pom.asc'
