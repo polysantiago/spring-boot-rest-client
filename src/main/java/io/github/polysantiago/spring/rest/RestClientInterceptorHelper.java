@@ -1,6 +1,22 @@
 package io.github.polysantiago.spring.rest;
 
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
+import static org.apache.commons.lang3.StringUtils.substringAfter;
+import static org.apache.commons.lang3.StringUtils.substringBefore;
+import static org.springframework.http.MediaType.parseMediaType;
+import static org.springframework.util.CollectionUtils.isEmpty;
+
 import io.github.polysantiago.spring.rest.support.MethodParameters;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 import lombok.NonNull;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -16,23 +32,13 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.RequestEntity.BodyBuilder;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import java.lang.reflect.Method;
-import java.net.URI;
-import java.util.Collection;
-import java.util.List;
-import java.util.stream.Stream;
-
-import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static org.apache.commons.lang3.ArrayUtils.isNotEmpty;
-import static org.apache.commons.lang3.StringUtils.substringAfter;
-import static org.apache.commons.lang3.StringUtils.substringBefore;
-import static org.springframework.http.MediaType.parseMediaType;
-import static org.springframework.util.CollectionUtils.isEmpty;
 
 class RestClientInterceptorHelper {
 
@@ -121,14 +127,15 @@ class RestClientInterceptorHelper {
         return value.toString();
     }
 
-    private Object[] getPathParameters(List<MethodParameter> parameters, Object[] arguments) {
+    private Map<String, Object> getPathParameters(List<MethodParameter> parameters, Object[] arguments) {
         if (!isEmpty(parameters)) {
             return parameters.stream()
                 .filter(parameter -> parameter.hasParameterAnnotation(PathVariable.class))
-                .map(parameter -> arguments[parameter.getParameterIndex()])
-                .toArray(Object[]::new);
+                .collect(toMap(
+                    parameter -> parameter.getParameterAnnotation(PathVariable.class).value(),
+                    parameter -> arguments[parameter.getParameterIndex()]));
         }
-        return new Object[]{};
+        return emptyMap();
     }
 
     private static HttpMethod toHttpMethod(RequestMethod requestMethod) {
