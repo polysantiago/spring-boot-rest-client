@@ -59,6 +59,7 @@ dependencies {
     compile 'org.springframework.retry:spring-retry', optional
 
     provided 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
     compile 'org.apache.commons:commons-lang3:3.5'
     compile 'net.javacrumbs.future-converter:future-converter-spring-java8:1.1.0'
 
@@ -67,6 +68,7 @@ dependencies {
     testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
     testCompile('org.assertj:assertj-core:3.6.2')
+    testAnnotationProcessor("org.projectlombok:lombok")
 }
 
 tasks.withType(Jar) {
