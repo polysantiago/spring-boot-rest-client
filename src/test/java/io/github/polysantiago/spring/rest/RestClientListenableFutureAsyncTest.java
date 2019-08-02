@@ -29,7 +29,7 @@ public class RestClientListenableFutureAsyncTest extends AbstractRestClientAsync
     @Mock
     private ListenableFutureCallback<Optional<String>> callback;
 
-    @RestClient(value = "localhost", url = "${localhost.uri}")
+    @RestClient(value = "listenable-future", url = "${localhost.uri}")
     interface ListenableFutureAsyncFooClient extends AbstractRestClientAsyncTest.AsyncFooClient {
 
         @Override

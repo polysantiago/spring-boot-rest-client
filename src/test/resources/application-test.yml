@@ -4,7 +4,13 @@ spring:
   rest:
     client:
       services:
-        localhost: http://localhost
+        test-client: http://localhost
+        completable-future: http://localhost
+        listenable-future: http://localhost
+        foo-client: http://localhost
+        foo-child-client: http://localhost
+        bar-client: http://localhost
+        baz-client: http://localhost
       retry:
         max-attempts: 2
 

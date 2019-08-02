@@ -65,7 +65,7 @@ public class RestClientTest {
 
     }
 
-    @RestClient(value = "localhost", url = "${localhost.uri}")
+    @RestClient(value = "foo-client", url = "${localhost.uri}")
     interface FooClient {
 
         @GetMapping
@@ -161,7 +161,7 @@ public class RestClientTest {
 
     }
 
-    @RestClient(value = "localhost", url = "${localhost.uri}")
+    @RestClient(value = "foo-child-client", url = "${localhost.uri}")
     interface FooChildClient extends FooParent<Foo> {
 
     }

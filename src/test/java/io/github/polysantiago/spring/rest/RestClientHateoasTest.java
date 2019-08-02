@@ -1,14 +1,12 @@
 package io.github.polysantiago.spring.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.Module;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
@@ -19,10 +17,10 @@ import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedResources;
 import org.springframework.hateoas.Resources;
 import org.springframework.hateoas.config.EnableHypermediaSupport;
+import org.springframework.hateoas.hal.Jackson2HalModule;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.MockRestServiceServer;
@@ -52,33 +50,19 @@ public class RestClientHateoasTest {
 
     @Configuration
     @EnableAutoConfiguration
-    @EnableRestClients(basePackageClasses = FooClient.class)
+    @EnableRestClients(basePackageClasses = BarClient.class)
     @EnableHypermediaSupport(type = EnableHypermediaSupport.HypermediaType.HAL)
     static class ContextConfiguration {
 
         @Bean
-        BeanPostProcessor halObjectMapperPostProcessor(Jackson2ObjectMapperBuilder builder) {
-            return new BeanPostProcessor() {
-                @Override
-                public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-                    return bean;
-                }
-
-                @Override
-                public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-                    if (!"_halObjectMapper".equals(beanName)) {
-                        return bean;
-                    }
-                    builder.configure((ObjectMapper) bean);
-                    return bean;
-                }
-            };
+        Module halModule() {
+            return new Jackson2HalModule();
         }
 
     }
 
-    @RestClient(value = "localhost", url = "${localhost.uri}")
-    interface FooClient {
+    @RestClient(value = "bar-client", url = "${localhost.uri}")
+    interface BarClient {
 
         @GetMapping(value = SINGLE_RESOURCE, produces = MediaTypes.HAL_JSON_VALUE)
         FooResource getFoo(@PathVariable("id") String id);
@@ -100,7 +84,7 @@ public class RestClientHateoasTest {
     private PropertyPlaceholderHelper helper = new PropertyPlaceholderHelper("{", "}");
 
     @Autowired
-    private FooClient fooClient;
+    private BarClient barClient;
 
     @Autowired
     private RestTemplate restTemplate;
@@ -132,7 +116,7 @@ public class RestClientHateoasTest {
 
         mockServerHalResponse(endpoint, fooResourceJson);
 
-        FooResource foo = fooClient.getFoo("1234");
+        FooResource foo = barClient.getFoo("1234");
 
         assertThat(foo).isNotNull();
         assertThat(foo.getId()).isNotNull();
@@ -146,7 +130,7 @@ public class RestClientHateoasTest {
 
         mockServerHalResponse(endpoint, fooResourceJson);
 
-        org.springframework.hateoas.Resource<Foo> resource = fooClient.getFooWrapped("1234");
+        org.springframework.hateoas.Resource<Foo> resource = barClient.getFooWrapped("1234");
 
         assertThat(resource).isNotNull();
         assertThat(resource.getId()).isNotNull();
@@ -159,7 +143,7 @@ public class RestClientHateoasTest {
     public void testCollectionResource() throws Exception {
         mockServerHalResponse(COLLECTION_RESOURCE, fooResourcesJson);
 
-        Resources<FooResource> foos = fooClient.getFoos();
+        Resources<FooResource> foos = barClient.getFoos();
 
         assertThat(foos.getId()).isNotNull();
         assertThat(foos.getContent()).isNotEmpty();
@@ -171,7 +155,7 @@ public class RestClientHateoasTest {
         mockServerHalResponse(OPTIONAL_COLLECTION_RESOURCE)
             .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-        Optional<Resources<FooResource>> optionalFoos = fooClient.getOptionalFoos();
+        Optional<Resources<FooResource>> optionalFoos = barClient.getOptionalFoos();
 
         assertThat(optionalFoos).isNotPresent();
     }
@@ -180,7 +164,7 @@ public class RestClientHateoasTest {
     public void testOptionalCollectionResource_found() throws Exception {
         mockServerHalResponse(OPTIONAL_COLLECTION_RESOURCE, fooResourcesJson);
 
-        Optional<Resources<FooResource>> optionalFoos = fooClient.getOptionalFoos();
+        Optional<Resources<FooResource>> optionalFoos = barClient.getOptionalFoos();
 
         assertThat(optionalFoos).isPresent();
         assertThat(optionalFoos).hasValueSatisfying(resources -> assertThat(resources).isNotEmpty());
@@ -194,7 +178,7 @@ public class RestClientHateoasTest {
     public void testPagedCollectionResource() throws Exception {
         mockServerHalResponse(PAGED_RESOURCE, fooPagedResourcesJson);
 
-        PagedResources<FooResource> pagedFoos = fooClient.getPagedFoos();
+        PagedResources<FooResource> pagedFoos = barClient.getPagedFoos();
 
         assertThat(pagedFoos).isNotEmpty();
         assertThat(pagedFoos.getContent()).isNotEmpty();

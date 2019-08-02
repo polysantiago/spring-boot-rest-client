@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'idea'
     id 'jacoco'
-    id "io.spring.dependency-management" version "1.0.2.RELEASE"
+    id "io.spring.dependency-management" version "1.0.7.RELEASE"
     id 'maven-publish'
     id 'signing'
     id 'nebula.optional-base' version '3.0.3'
@@ -44,7 +44,7 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom 'io.spring.platform:platform-bom:Brussels-SR2'
+        mavenBom 'org.springframework.boot:spring-boot-dependencies:2.1.6.RELEASE'
     }
 }
 
@@ -55,7 +55,8 @@ dependencies {
     compile("org.springframework:spring-webmvc")
     compile('org.springframework:spring-aop')
     compile('org.aspectj:aspectjweaver')
-
+    annotationProcessor('org.springframework.boot:spring-boot-configuration-processor')
+    
     compile 'org.springframework.retry:spring-retry', optional
 
     provided 'org.projectlombok:lombok'

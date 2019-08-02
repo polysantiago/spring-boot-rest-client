@@ -34,26 +34,26 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 public class RestClientRetryTest {
 
     @Autowired
-    private FooClient fooClient;
+    private BazClient bazClient;
 
     @Autowired
     private RestTemplate restTemplate;
 
-    @Value("${spring.rest.client.services.localhost}")
+    @Value("${localhost.uri}")
     private String requestUrl;
 
     private MockRestServiceServer server;
 
     @Configuration
     @EnableAutoConfiguration
-    @EnableRestClients(basePackageClasses = FooClient.class)
+    @EnableRestClients(basePackageClasses = BazClient.class)
     @EnableRetry
     protected static class TestConfiguration {
 
     }
 
-    @RestClient(name = "localhost", retryOn = {HttpStatus.SERVICE_UNAVAILABLE}, retryOnException = {ResourceAccessException.class})
-    interface FooClient {
+    @RestClient(name = "baz-client", retryOn = {HttpStatus.SERVICE_UNAVAILABLE}, retryOnException = {ResourceAccessException.class})
+    interface BazClient {
 
         @RequestMapping
         Void foo();
@@ -80,7 +80,7 @@ public class RestClientRetryTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess());
 
-        fooClient.foo();
+        bazClient.foo();
     }
 
     @Test(expected = HttpServerErrorException.class)
@@ -89,7 +89,7 @@ public class RestClientRetryTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withServerError());
 
-        fooClient.foo();
+        bazClient.foo();
     }
 
     @Test
@@ -109,7 +109,7 @@ public class RestClientRetryTest {
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess());
 
-        fooClient.foo();
+        bazClient.foo();
     }
 
     @Test(expected = RuntimeException.class)
@@ -120,7 +120,7 @@ public class RestClientRetryTest {
                 throw new RuntimeException();
             });
 
-        fooClient.foo();
+        bazClient.foo();
     }
 
     private String defaultUrl() {

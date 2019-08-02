@@ -155,7 +155,8 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
             getResponse(fooClient.fooObject());
             fail("Should get NOT FOUND");
         } catch (ExecutionException executionException) {
-            assertThat(executionException).hasCauseExactlyInstanceOf(HttpClientErrorException.class);
+            assertThat(executionException)
+                .hasCauseExactlyInstanceOf(HttpClientErrorException.NotFound.class);
         }
     }
 
@@ -198,7 +199,8 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
             getResponse(fooClient.bar("some-body"));
             fail("Should have gotten Exception");
         } catch (ExecutionException executionException) {
-            assertThat(executionException).hasCauseExactlyInstanceOf(HttpServerErrorException.class);
+            assertThat(executionException)
+                .hasCauseExactlyInstanceOf(HttpServerErrorException.InternalServerError.class);
         }
     }
 
@@ -251,7 +253,8 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
             getResponse(fooClient.defaultFoo());
             fail("Should have gotten exception");
         } catch (ExecutionException executionException) {
-            assertThat(executionException).hasCauseExactlyInstanceOf(HttpServerErrorException.class);
+            assertThat(executionException)
+                .hasCauseExactlyInstanceOf(HttpServerErrorException.ServiceUnavailable.class);
         }
     }
 

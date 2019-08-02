@@ -20,7 +20,7 @@ public class RestClientCompletableFutureAsyncTest extends AbstractRestClientAsyn
 
     }
 
-    @RestClient(value = "localhost", url = "${localhost.uri}")
+    @RestClient(value = "completable-future", url = "${localhost.uri}")
     interface CompletableFutureAsyncFooClient extends AbstractRestClientAsyncTest.AsyncFooClient {
 
         @Override

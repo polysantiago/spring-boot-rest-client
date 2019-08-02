@@ -81,7 +81,7 @@ public class RestClientAutoConfigurationTest {
 
     }
 
-    @RestClient(value = "localhost", url = "http://someserver")
+    @RestClient(value = "test-client", url = "http://someserver")
     interface TestClient {
 
         @GetMapping("str")
