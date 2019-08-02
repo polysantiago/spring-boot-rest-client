@@ -7,7 +7,6 @@ import lombok.Setter;
 @Setter
 public class RetrySettings {
 
-    private int maxAttempts = 3;
-    private BackOffSettings backOff = new BackOffSettings();
-
+  private int maxAttempts = 3;
+  private BackOffSettings backOff = new BackOffSettings();
 }

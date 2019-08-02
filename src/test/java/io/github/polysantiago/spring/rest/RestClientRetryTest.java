@@ -34,97 +34,103 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootTest
 public class RestClientRetryTest {
 
-    @Autowired
-    private BazClient bazClient;
+  @Autowired private BazClient bazClient;
+  @Autowired private RestTemplate restTemplate;
 
-    @Autowired
-    private RestTemplate restTemplate;
+  @Value("${localhost.uri}")
+  private String requestUrl;
 
-    @Value("${localhost.uri}")
-    private String requestUrl;
+  private MockRestServiceServer server;
 
-    private MockRestServiceServer server;
+  @Before
+  public void setUp() {
+    server = createServer(restTemplate);
+  }
 
-    @Configuration
-    @EnableAutoConfiguration
-    @EnableRestClients(basePackageClasses = BazClient.class)
-    @EnableRetry
-    protected static class TestConfiguration {
+  @After
+  public void tearDown() {
+    server.verify();
+  }
 
-    }
+  @Test
+  public void testRetry() {
+    server
+        .expect(requestTo(defaultUrl()))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
 
-    @RestClient(name = "baz-client", retryOn = {HttpStatus.SERVICE_UNAVAILABLE}, retryOnException = {ResourceAccessException.class})
-    interface BazClient {
+    server
+        .expect(requestTo(defaultUrl()))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess());
 
-        @RequestMapping
-        Void foo();
+    bazClient.foo();
+  }
 
-    }
+  @Test(expected = HttpServerErrorException.class)
+  public void testShouldNotRetry() {
+    server
+        .expect(requestTo(defaultUrl()))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withServerError());
 
-    @Before
-    public void setUp() {
-        server = createServer(restTemplate);
-    }
+    bazClient.foo();
+  }
 
-    @After
-    public void tearDown() {
-        server.verify();
-    }
+  @Test
+  public void testShouldRetryOnIoException() {
+    // This is a workaround needed because of a glitch in SimpleRequestExpectationManager.
+    // If using SimpleRequestExpectationManager, afterExpectationsDeclared() fails due to the
+    // request not properly
+    // being registered as the response throws an Exception.
+    MockRestServiceServer unorderedServer = bindTo(restTemplate).ignoreExpectOrder(true).build();
 
-    @Test
-    public void testRetry() {
-        server.expect(requestTo(defaultUrl()))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
-
-        server.expect(requestTo(defaultUrl()))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withSuccess());
-
-        bazClient.foo();
-    }
-
-    @Test(expected = HttpServerErrorException.class)
-    public void testShouldNotRetry() {
-        server.expect(requestTo(defaultUrl()))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withServerError());
-
-        bazClient.foo();
-    }
-
-    @Test
-    public void testShouldRetryOnIoException() {
-        // This is a workaround needed because of a glitch in SimpleRequestExpectationManager.
-        // If using SimpleRequestExpectationManager, afterExpectationsDeclared() fails due to the request not properly
-        // being registered as the response throws an Exception.
-        MockRestServiceServer unorderedServer = bindTo(restTemplate).ignoreExpectOrder(true).build();
-
-        unorderedServer.expect(requestTo(defaultUrl()))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(request -> {
-                throw new IOException();
+    unorderedServer
+        .expect(requestTo(defaultUrl()))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            request -> {
+              throw new IOException();
             });
 
-        unorderedServer.expect(requestTo(defaultUrl()))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(withSuccess());
+    unorderedServer
+        .expect(requestTo(defaultUrl()))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(withSuccess());
 
-        bazClient.foo();
-    }
+    bazClient.foo();
+  }
 
-    @Test(expected = RuntimeException.class)
-    public void testShouldNotRetryOnOtherExceptions() {
-        server.expect(requestTo(defaultUrl()))
-            .andExpect(method(HttpMethod.GET))
-            .andRespond(request -> {
-                throw new RuntimeException();
+  @Test(expected = RuntimeException.class)
+  public void testShouldNotRetryOnOtherExceptions() {
+    server
+        .expect(requestTo(defaultUrl()))
+        .andExpect(method(HttpMethod.GET))
+        .andRespond(
+            request -> {
+              throw new RuntimeException();
             });
 
-        bazClient.foo();
-    }
+    bazClient.foo();
+  }
 
-    private String defaultUrl() {
-        return requestUrl + "/";
-    }
+  private String defaultUrl() {
+    return requestUrl + "/";
+  }
+
+  @RestClient(
+      name = "baz-client",
+      retryOn = {HttpStatus.SERVICE_UNAVAILABLE},
+      retryOnException = {ResourceAccessException.class})
+  interface BazClient {
+
+    @RequestMapping
+    Void foo();
+  }
+
+  @Configuration
+  @EnableAutoConfiguration
+  @EnableRestClients(basePackageClasses = BazClient.class)
+  @EnableRetry
+  protected static class TestConfiguration {}
 }

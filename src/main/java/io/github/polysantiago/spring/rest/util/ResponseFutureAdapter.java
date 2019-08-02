@@ -6,13 +6,12 @@ import org.springframework.util.concurrent.ListenableFutureAdapter;
 
 public class ResponseFutureAdapter<T> extends ListenableFutureAdapter<T, ResponseEntity<T>> {
 
-    public ResponseFutureAdapter(ListenableFuture<ResponseEntity<T>> adaptee) {
-        super(adaptee);
-    }
+  public ResponseFutureAdapter(ListenableFuture<ResponseEntity<T>> adaptee) {
+    super(adaptee);
+  }
 
-    @Override
-    protected T adapt(ResponseEntity<T> adapteeResult) {
-        return adapteeResult.getBody();
-    }
-
+  @Override
+  protected T adapt(ResponseEntity<T> adapteeResult) {
+    return adapteeResult.getBody();
+  }
 }

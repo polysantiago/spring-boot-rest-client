@@ -18,27 +18,24 @@ import org.springframework.web.client.RestTemplate;
 @SpringBootTest
 public class RestClientContextTest {
 
-    @Order
-    @Configuration
-    @EnableAutoConfiguration
-    @EnableRetry
-    @EnableRestClients
-    protected static class TestConfiguration {
+  @Test
+  public void testContextLoads() {}
 
-        @Bean
-        public RetryOperationsInterceptor retryInterceptor() {
-            return new RetryOperationsInterceptor();
-        }
+  @Order
+  @Configuration
+  @EnableAutoConfiguration
+  @EnableRetry
+  @EnableRestClients
+  protected static class TestConfiguration {
 
-        @Bean
-        public RestTemplate restTemplate() {
-            return new RestTemplate();
-        }
-
+    @Bean
+    public RetryOperationsInterceptor retryInterceptor() {
+      return new RetryOperationsInterceptor();
     }
 
-    @Test
-    public void testContextLoads() {
-
+    @Bean
+    public RestTemplate restTemplate() {
+      return new RestTemplate();
     }
+  }
 }

@@ -7,6 +7,5 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 class Foo {
 
-    private final String bar;
-
+  private final String bar;
 }

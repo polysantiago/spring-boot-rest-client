@@ -15,75 +15,75 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 public class RestClientAutoConfigurationTest {
 
-    @Test
-    public void testInjectConversionServiceSingleCandidate() {
-        new AnnotationConfigApplicationContext(SingleCandidateConfiguration.class).getBean(TestClient.class);
+  @Test
+  public void testInjectConversionServiceSingleCandidate() {
+    new AnnotationConfigApplicationContext(SingleCandidateConfiguration.class)
+        .getBean(TestClient.class);
+  }
+
+  @Test
+  public void testInjectConversionMultipleCandidates() {
+    assertThatExceptionOfType(BeanCreationException.class)
+        .isThrownBy(
+            () ->
+                new AnnotationConfigApplicationContext(MultipleCandidatesConfiguration.class)
+                    .getBean(TestClient.class))
+        .withCauseExactlyInstanceOf(NoUniqueBeanDefinitionException.class);
+  }
+
+  @Test
+  public void testInjectMvcConversionServiceAsDefault() {
+    new AnnotationConfigApplicationContext(InjectMvcConversionServiceAsDefaultConfiguration.class)
+        .getBean(TestClient.class);
+  }
+
+  @RestClient(value = "test-client", url = "http://someserver")
+  interface TestClient {
+
+    @GetMapping("str")
+    String getString();
+  }
+
+  @Configuration
+  @EnableAutoConfiguration
+  @EnableRestClients(clients = TestClient.class)
+  static class SingleCandidateConfiguration {
+
+    @Bean
+    FormattingConversionService someConversionService() {
+      return new DefaultFormattingConversionService();
+    }
+  }
+
+  @Configuration
+  @EnableAutoConfiguration
+  @EnableRestClients(clients = TestClient.class)
+  static class MultipleCandidatesConfiguration {
+
+    @Bean
+    FormattingConversionService someConversionService() {
+      return new DefaultFormattingConversionService();
     }
 
-    @Configuration
-    @EnableAutoConfiguration
-    @EnableRestClients(clients = TestClient.class)
-    static class SingleCandidateConfiguration {
+    @Bean
+    FormattingConversionService someOtherConversionService() {
+      return new DefaultFormattingConversionService();
+    }
+  }
 
-        @Bean
-        FormattingConversionService someConversionService() {
-            return new DefaultFormattingConversionService();
-        }
+  @Configuration
+  @EnableAutoConfiguration
+  @EnableRestClients(clients = TestClient.class)
+  static class InjectMvcConversionServiceAsDefaultConfiguration {
 
+    @Bean
+    FormattingConversionService someConversionService() {
+      return new DefaultFormattingConversionService();
     }
 
-    @Test
-    public void testInjectConversionMultipleCandidates() {
-        assertThatExceptionOfType(BeanCreationException.class)
-            .isThrownBy(() -> new AnnotationConfigApplicationContext(MultipleCandidatesConfiguration.class).getBean(TestClient.class))
-            .withCauseExactlyInstanceOf(NoUniqueBeanDefinitionException.class);
+    @Bean
+    FormattingConversionService mvcConversionService() {
+      return new DefaultFormattingConversionService();
     }
-
-    @Configuration
-    @EnableAutoConfiguration
-    @EnableRestClients(clients = TestClient.class)
-    static class MultipleCandidatesConfiguration {
-
-        @Bean
-        FormattingConversionService someConversionService() {
-            return new DefaultFormattingConversionService();
-        }
-
-        @Bean
-        FormattingConversionService someOtherConversionService() {
-            return new DefaultFormattingConversionService();
-        }
-
-    }
-
-    @Test
-    public void testInjectMvcConversionServiceAsDefault() {
-        new AnnotationConfigApplicationContext(InjectMvcConversionServiceAsDefaultConfiguration.class).getBean(TestClient.class);
-    }
-
-    @Configuration
-    @EnableAutoConfiguration
-    @EnableRestClients(clients = TestClient.class)
-    static class InjectMvcConversionServiceAsDefaultConfiguration {
-
-        @Bean
-        FormattingConversionService someConversionService() {
-            return new DefaultFormattingConversionService();
-        }
-
-        @Bean
-        FormattingConversionService mvcConversionService() {
-            return new DefaultFormattingConversionService();
-        }
-
-    }
-
-    @RestClient(value = "test-client", url = "http://someserver")
-    interface TestClient {
-
-        @GetMapping("str")
-        String getString();
-
-    }
-
+  }
 }

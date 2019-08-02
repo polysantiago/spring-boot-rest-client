@@ -7,9 +7,8 @@ import lombok.Setter;
 @Setter
 public class BackOffSettings {
 
-    private long delay = 1000;
-    private long maxDelay;
-    private double multiplier;
-    private boolean random;
-
+  private long delay = 1000;
+  private long maxDelay;
+  private double multiplier;
+  private boolean random;
 }

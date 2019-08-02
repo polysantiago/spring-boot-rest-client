@@ -15,47 +15,46 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.util.concurrent.SettableListenableFuture;
 import org.springframework.web.client.HttpClientErrorException;
 
-
 @RunWith(MockitoJUnitRunner.class)
 public class OptionalTypeFutureAdapterTest {
 
-    @Mock
-    private ListenableFutureCallback<Optional<String>> callback;
+  @Mock private ListenableFutureCallback<Optional<String>> callback;
 
-    private SettableListenableFuture<ResponseEntity<Optional<String>>> wrappedFuture = new SettableListenableFuture<>();
+  private SettableListenableFuture<ResponseEntity<Optional<String>>> wrappedFuture =
+      new SettableListenableFuture<>();
 
-    @Before
-    public void setUp() {
-        OptionalTypeFutureAdapter<String> listenableFutureWrapper = new OptionalTypeFutureAdapter<>(wrappedFuture);
-        listenableFutureWrapper.addCallback(callback);
-    }
+  @Before
+  public void setUp() {
+    OptionalTypeFutureAdapter<String> listenableFutureWrapper =
+        new OptionalTypeFutureAdapter<>(wrappedFuture);
+    listenableFutureWrapper.addCallback(callback);
+  }
 
-    @Test
-    public void testOFailure() {
-        Exception exception = new Exception();
+  @Test
+  public void testOFailure() {
+    Exception exception = new Exception();
 
-        wrappedFuture.setException(exception);
+    wrappedFuture.setException(exception);
 
-        verify(callback).onFailure(eq(exception));
-    }
+    verify(callback).onFailure(eq(exception));
+  }
 
-    @Test
-    public void testNotFoundExceptionTranslatedToEmptyOptional() {
-        HttpClientErrorException exception = new HttpClientErrorException(HttpStatus.NOT_FOUND);
+  @Test
+  public void testNotFoundExceptionTranslatedToEmptyOptional() {
+    HttpClientErrorException exception = new HttpClientErrorException(HttpStatus.NOT_FOUND);
 
-        wrappedFuture.setException(exception);
+    wrappedFuture.setException(exception);
 
-        verify(callback).onSuccess(eq(Optional.empty()));
-    }
+    verify(callback).onSuccess(eq(Optional.empty()));
+  }
 
-    @Test
-    public void testOtherClientErrorExceptionsNotTranslatedToEmptyOptional() {
-        HttpClientErrorException exception = new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR);
+  @Test
+  public void testOtherClientErrorExceptionsNotTranslatedToEmptyOptional() {
+    HttpClientErrorException exception =
+        new HttpClientErrorException(HttpStatus.INTERNAL_SERVER_ERROR);
 
-        wrappedFuture.setException(exception);
+    wrappedFuture.setException(exception);
 
-        verify(callback).onFailure(eq(exception));
-    }
-
-
+    verify(callback).onFailure(eq(exception));
+  }
 }

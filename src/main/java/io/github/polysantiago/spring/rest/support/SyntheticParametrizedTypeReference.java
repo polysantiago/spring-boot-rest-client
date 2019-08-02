@@ -13,13 +13,13 @@ import org.springframework.core.ResolvableType;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class SyntheticParametrizedTypeReference<T> extends ParameterizedTypeReference<T> {
 
-    private final Type type;
+  private final Type type;
 
-    public static <T> SyntheticParametrizedTypeReference<T> fromResolvableType(ResolvableType resolvedType) {
-        if (resolvedType.hasGenerics()) {
-            return new SyntheticParametrizedTypeReference<>(new SyntheticParametrizedType(resolvedType));
-        }
-        return new SyntheticParametrizedTypeReference<>(resolvedType.resolve());
+  public static <T> SyntheticParametrizedTypeReference<T> fromResolvableType(
+      ResolvableType resolvedType) {
+    if (resolvedType.hasGenerics()) {
+      return new SyntheticParametrizedTypeReference<>(new SyntheticParametrizedType(resolvedType));
     }
-
+    return new SyntheticParametrizedTypeReference<>(resolvedType.resolve());
+  }
 }

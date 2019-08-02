@@ -13,49 +13,53 @@ import org.springframework.web.client.HttpClientErrorException;
 
 public class OptionalTypeFutureAdapter<T> extends ResponseFutureAdapter<Optional<T>> {
 
-    public OptionalTypeFutureAdapter(ListenableFuture<ResponseEntity<Optional<T>>> delegate) {
-        super(delegate);
-    }
+  public OptionalTypeFutureAdapter(ListenableFuture<ResponseEntity<Optional<T>>> delegate) {
+    super(delegate);
+  }
 
-    @Override
-    public void addCallback(SuccessCallback<? super Optional<T>> successCallback, FailureCallback failureCallback) {
-        super.addCallback(successCallback, throwable -> {
-            if (isNotFoundException(throwable)) {
-                successCallback.onSuccess(Optional.empty());
-            } else {
-                failureCallback.onFailure(throwable);
-            }
+  private static boolean isNotFoundException(Throwable throwable) {
+    return throwable instanceof HttpClientErrorException
+        && ((HttpClientErrorException) throwable).getStatusCode() == HttpStatus.NOT_FOUND;
+  }
+
+  @Override
+  public void addCallback(
+      SuccessCallback<? super Optional<T>> successCallback, FailureCallback failureCallback) {
+    super.addCallback(
+        successCallback,
+        throwable -> {
+          if (isNotFoundException(throwable)) {
+            successCallback.onSuccess(Optional.empty());
+          } else {
+            failureCallback.onFailure(throwable);
+          }
         });
-    }
+  }
 
-    @Override
-    public Optional<T> get() throws InterruptedException, ExecutionException {
-        try {
-            return super.get();
-        } catch (ExecutionException executionException) {
-            return handleExecutionException(executionException);
-        }
+  @Override
+  public Optional<T> get() throws InterruptedException, ExecutionException {
+    try {
+      return super.get();
+    } catch (ExecutionException executionException) {
+      return handleExecutionException(executionException);
     }
+  }
 
-    @Override
-    public Optional<T> get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        try {
-            return super.get(timeout, unit);
-        } catch (ExecutionException executionException) {
-            return handleExecutionException(executionException);
-        }
+  @Override
+  public Optional<T> get(long timeout, TimeUnit unit)
+      throws InterruptedException, ExecutionException, TimeoutException {
+    try {
+      return super.get(timeout, unit);
+    } catch (ExecutionException executionException) {
+      return handleExecutionException(executionException);
     }
+  }
 
-    private Optional<T> handleExecutionException(ExecutionException executionException) throws ExecutionException {
-        if (isNotFoundException(executionException.getCause())) {
-            return Optional.empty();
-        }
-        throw executionException;
+  private Optional<T> handleExecutionException(ExecutionException executionException)
+      throws ExecutionException {
+    if (isNotFoundException(executionException.getCause())) {
+      return Optional.empty();
     }
-
-    private static boolean isNotFoundException(Throwable throwable) {
-        return throwable instanceof HttpClientErrorException &&
-            ((HttpClientErrorException) throwable).getStatusCode() == HttpStatus.NOT_FOUND;
-    }
-
+    throw executionException;
+  }
 }

@@ -1,6 +1,7 @@
 package io.github.polysantiago.spring.rest;
 
 import io.github.polysantiago.spring.rest.retry.RetryOperationsInterceptorFactory;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -21,8 +22,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
-import java.util.List;
-
 @Configuration
 @EnableConfigurationProperties(RestClientProperties.class)
 @ConditionalOnBean(annotation = {EnableRestClients.class})
@@ -30,56 +29,56 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RestClientAutoConfiguration {
 
-    private final List<RestClientSpecification> specifications;
+  private final List<RestClientSpecification> specifications;
+
+  @Bean
+  @ConditionalOnMissingBean
+  public RestTemplate restClientTemplate(RestTemplateBuilder builder) {
+    return builder.build();
+  }
+
+  @Bean
+  @ConditionalOnMissingBean
+  @ConditionalOnBean(RestTemplate.class)
+  public AsyncRestTemplate asyncRestClientTemplate(RestTemplate restTemplate) {
+    SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+    requestFactory.setTaskExecutor(new SimpleAsyncTaskExecutor());
+    return new AsyncRestTemplate(requestFactory, restTemplate);
+  }
+
+  @Bean
+  public WebMvcConfigurer restClientWebMvcConfigurer(RestClientProperties properties) {
+    return new WebMvcConfigurerAdapter() {
+      @Override
+      public void addFormatters(FormatterRegistry registry) {
+        DateTimeFormatterRegistrar dateTimeFormatterRegistrar = new DateTimeFormatterRegistrar();
+        dateTimeFormatterRegistrar.setUseIsoFormat(properties.getIsoDateTimeFormat());
+        dateTimeFormatterRegistrar.registerFormatters(registry);
+      }
+    };
+  }
+
+  @Bean
+  public RestClientContext restClientContext(RestClientProperties properties) {
+    return new RestClientContext(specifications, properties.getServices());
+  }
+
+  @Configuration
+  @ConditionalOnBean(RetryConfiguration.class)
+  protected static class RestClientRetryConfiguration {
+
+    @Bean("restClientRetryInterceptor")
+    @ConditionalOnMissingBean
+    public RetryOperationsInterceptorFactory retryOperationInterceptorFactory(
+        RestClientProperties properties) {
+      return new RetryOperationsInterceptorFactory(properties);
+    }
 
     @Bean
     @ConditionalOnMissingBean
-    public RestTemplate restClientTemplate(RestTemplateBuilder builder) {
-        return builder.build();
+    public RestClientRetryConfigurer restClientRetryConfigurer(
+        RetryOperationsInterceptor restClientRetryInterceptor) {
+      return new RestClientRetryConfigurer(restClientRetryInterceptor);
     }
-
-    @Bean
-    @ConditionalOnMissingBean
-    @ConditionalOnBean(RestTemplate.class)
-    public AsyncRestTemplate asyncRestClientTemplate(RestTemplate restTemplate) {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setTaskExecutor(new SimpleAsyncTaskExecutor());
-        return new AsyncRestTemplate(requestFactory, restTemplate);
-    }
-
-    @Bean
-    public WebMvcConfigurer restClientWebMvcConfigurer(RestClientProperties properties) {
-        return new WebMvcConfigurerAdapter() {
-            @Override
-            public void addFormatters(FormatterRegistry registry) {
-                DateTimeFormatterRegistrar dateTimeFormatterRegistrar = new DateTimeFormatterRegistrar();
-                dateTimeFormatterRegistrar.setUseIsoFormat(properties.getIsoDateTimeFormat());
-                dateTimeFormatterRegistrar.registerFormatters(registry);
-            }
-        };
-    }
-
-    @Configuration
-    @ConditionalOnBean(RetryConfiguration.class)
-    protected static class RestClientRetryConfiguration {
-
-        @Bean("restClientRetryInterceptor")
-        @ConditionalOnMissingBean
-        public RetryOperationsInterceptorFactory retryOperationInterceptorFactory(RestClientProperties properties) {
-            return new RetryOperationsInterceptorFactory(properties);
-        }
-
-        @Bean
-        @ConditionalOnMissingBean
-        public RestClientRetryConfigurer restClientRetryConfigurer(RetryOperationsInterceptor restClientRetryInterceptor) {
-            return new RestClientRetryConfigurer(restClientRetryInterceptor);
-        }
-
-    }
-
-    @Bean
-    public RestClientContext restClientContext(RestClientProperties properties) {
-        return new RestClientContext(specifications, properties.getServices());
-    }
-
+  }
 }

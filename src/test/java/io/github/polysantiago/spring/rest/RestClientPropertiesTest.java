@@ -14,72 +14,75 @@ import org.springframework.context.annotation.Configuration;
 
 public class RestClientPropertiesTest {
 
-    private AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+  private AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-    @After
-    public void tearDown() {
-        if (this.context != null) {
-            this.context.close();
-        }
+  private static void assertProperties(
+      RestClientProperties properties,
+      int maxAttempts,
+      long delay,
+      long maxDelay,
+      double multiplier,
+      boolean random) {
+    assertThat(properties).isNotNull();
+
+    RetrySettings retry = properties.getRetry();
+    assertThat(retry).isNotNull();
+    assertThat(retry.getMaxAttempts()).isEqualTo(maxAttempts);
+
+    BackOffSettings backOff = retry.getBackOff();
+    assertThat(backOff).isNotNull();
+    assertThat(backOff.getDelay()).isEqualTo(delay);
+    assertThat(backOff.getMaxDelay()).isEqualTo(maxDelay);
+    assertThat(backOff.getMultiplier()).isEqualTo(multiplier);
+    assertThat(backOff.isRandom()).isEqualTo(random);
+  }
+
+  @After
+  public void tearDown() {
+    if (this.context != null) {
+      this.context.close();
     }
+  }
 
-    @Test
-    public void testDefaultProperties() {
-        registerAndRefresh();
+  @Test
+  public void testDefaultProperties() {
+    registerAndRefresh();
 
-        assertProperties(getProperties(), 3, 1000L, 0L, 0.0d, false);
-    }
+    assertProperties(getProperties(), 3, 1000L, 0L, 0.0d, false);
+  }
 
-    @Test
-    public void testMaxAttempts() {
-        TestPropertyValues.of("spring.rest.client.retry.max-attempts:5").applyTo(this.context);
+  @Test
+  public void testMaxAttempts() {
+    TestPropertyValues.of("spring.rest.client.retry.max-attempts:5").applyTo(this.context);
 
-        registerAndRefresh();
+    registerAndRefresh();
 
-        assertProperties(getProperties(), 5, 1000L, 0L, 0.0d, false);
-    }
+    assertProperties(getProperties(), 5, 1000L, 0L, 0.0d, false);
+  }
 
-    @Test
-    public void testBackOffSettings() throws Exception {
-        TestPropertyValues.of("spring.rest.client.retry.back-off.delay:2000")
-            .and("spring.rest.client.retry.back-off.max-delay:10000")
-            .and("spring.rest.client.retry.back-off.multiplier:2.5")
-            .and("spring.rest.client.retry.back-off.random:true")
-            .applyTo(this.context);
+  @Test
+  public void testBackOffSettings() throws Exception {
+    TestPropertyValues.of("spring.rest.client.retry.back-off.delay:2000")
+        .and("spring.rest.client.retry.back-off.max-delay:10000")
+        .and("spring.rest.client.retry.back-off.multiplier:2.5")
+        .and("spring.rest.client.retry.back-off.random:true")
+        .applyTo(this.context);
 
-        registerAndRefresh();
+    registerAndRefresh();
 
-        assertProperties(getProperties(), 3, 2000L, 10000L, 2.5d, true);
-    }
+    assertProperties(getProperties(), 3, 2000L, 10000L, 2.5d, true);
+  }
 
-    private RestClientProperties getProperties() {
-        return this.context.getBean(RestClientProperties.class);
-    }
+  private RestClientProperties getProperties() {
+    return this.context.getBean(RestClientProperties.class);
+  }
 
-    private void registerAndRefresh() {
-        this.context.register(PropertyPlaceholderAutoConfiguration.class, TestConfiguration.class);
-        this.context.refresh();
-    }
+  private void registerAndRefresh() {
+    this.context.register(PropertyPlaceholderAutoConfiguration.class, TestConfiguration.class);
+    this.context.refresh();
+  }
 
-    private static void assertProperties(RestClientProperties properties,
-                                         int maxAttempts, long delay, long maxDelay, double multiplier, boolean random) {
-        assertThat(properties).isNotNull();
-
-        RetrySettings retry = properties.getRetry();
-        assertThat(retry).isNotNull();
-        assertThat(retry.getMaxAttempts()).isEqualTo(maxAttempts);
-
-        BackOffSettings backOff = retry.getBackOff();
-        assertThat(backOff).isNotNull();
-        assertThat(backOff.getDelay()).isEqualTo(delay);
-        assertThat(backOff.getMaxDelay()).isEqualTo(maxDelay);
-        assertThat(backOff.getMultiplier()).isEqualTo(multiplier);
-        assertThat(backOff.isRandom()).isEqualTo(random);
-    }
-
-    @Configuration
-    @EnableConfigurationProperties(RestClientProperties.class)
-    static class TestConfiguration {
-
-    }
+  @Configuration
+  @EnableConfigurationProperties(RestClientProperties.class)
+  static class TestConfiguration {}
 }

@@ -12,8 +12,7 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public class RestClientSpecification {
 
-    private String name;
-    private HttpStatus[] retryableStatuses;
-    private Class<? extends Exception>[] retryableExceptions;
-
+  private String name;
+  private HttpStatus[] retryableStatuses;
+  private Class<? extends Exception>[] retryableExceptions;
 }

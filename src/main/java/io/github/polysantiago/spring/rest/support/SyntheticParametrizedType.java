@@ -12,34 +12,36 @@ import org.springframework.core.ResolvableType;
 @Getter
 public final class SyntheticParametrizedType implements ParameterizedType, Serializable {
 
-    private static final long serialVersionUID = -521679299810654826L;
+  private static final long serialVersionUID = -521679299810654826L;
 
-    private final Type rawType;
-    private final Type[] actualTypeArguments;
+  private final Type rawType;
+  private final Type[] actualTypeArguments;
 
-    SyntheticParametrizedType(ResolvableType resolvedType) {
-        this.rawType = resolvedType.getRawClass();
-        this.actualTypeArguments = resolveGenerics(resolvedType);
+  SyntheticParametrizedType(ResolvableType resolvedType) {
+    this.rawType = resolvedType.getRawClass();
+    this.actualTypeArguments = resolveGenerics(resolvedType);
+  }
+
+  private Type[] resolveGenerics(ResolvableType resolvableType) {
+    if (resolvableType.hasGenerics()) {
+      return Arrays.stream(resolvableType.getGenerics())
+          .map(SyntheticParametrizedType::new)
+          .toArray(Type[]::new);
     }
+    return resolvableType.resolveGenerics();
+  }
 
-    private Type[] resolveGenerics(ResolvableType resolvableType) {
-        if (resolvableType.hasGenerics()) {
-            return Arrays.stream(resolvableType.getGenerics())
-                .map(SyntheticParametrizedType::new)
-                .toArray(Type[]::new);
-        }
-        return resolvableType.resolveGenerics();
-    }
+  @Override
+  public Type getOwnerType() {
+    return null;
+  }
 
-    @Override
-    public Type getOwnerType() {
-        return null;
-    }
-
-    @Override
-    public String toString() {
-        return String.format("%s<%s<%s>>", SyntheticParametrizedType.class.getName(), rawType.getTypeName(),
-            Arrays.stream(actualTypeArguments).map(Type::getTypeName).collect(joining(",")));
-    }
-
+  @Override
+  public String toString() {
+    return String.format(
+        "%s<%s<%s>>",
+        SyntheticParametrizedType.class.getName(),
+        rawType.getTypeName(),
+        Arrays.stream(actualTypeArguments).map(Type::getTypeName).collect(joining(",")));
+  }
 }

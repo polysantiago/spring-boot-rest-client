@@ -16,39 +16,37 @@ import org.springframework.util.concurrent.SettableListenableFuture;
 @RunWith(MockitoJUnitRunner.class)
 public class ResponseFutureAdapterTest {
 
-    @Mock
-    private ResponseEntity<String> responseEntity;
+  @Mock private ResponseEntity<String> responseEntity;
+  @Mock private ListenableFutureCallback<String> callback;
 
-    @Mock
-    private ListenableFutureCallback<String> callback;
+  private SettableListenableFuture<ResponseEntity<String>> wrappedFuture =
+      new SettableListenableFuture<>();
 
-    private SettableListenableFuture<ResponseEntity<String>> wrappedFuture = new SettableListenableFuture<>();
+  @Before
+  public void setUp() {
+    ResponseFutureAdapter<String> responseFutureWrapper =
+        new ResponseFutureAdapter<>(wrappedFuture);
+    responseFutureWrapper.addCallback(callback);
+  }
 
-    @Before
-    public void setUp() {
-        ResponseFutureAdapter<String> responseFutureWrapper = new ResponseFutureAdapter<>(wrappedFuture);
-        responseFutureWrapper.addCallback(callback);
-    }
+  @Test
+  public void testOnSuccess() {
+    String responseString = "SOMESTRING";
 
-    @Test
-    public void testOnSuccess() {
-        String responseString = "SOMESTRING";
+    when(responseEntity.getBody()).thenReturn(responseString);
 
-        when(responseEntity.getBody()).thenReturn(responseString);
+    wrappedFuture.set(responseEntity);
 
-        wrappedFuture.set(responseEntity);
+    verify(callback).onSuccess(eq(responseString));
+    verify(responseEntity).getBody();
+  }
 
-        verify(callback).onSuccess(eq(responseString));
-        verify(responseEntity).getBody();
-    }
+  @Test
+  public void testOFailure() {
+    Exception exception = new Exception();
 
-    @Test
-    public void testOFailure() {
-        Exception exception = new Exception();
+    wrappedFuture.setException(exception);
 
-        wrappedFuture.setException(exception);
-
-        verify(callback).onFailure(eq(exception));
-    }
-
+    verify(callback).onFailure(eq(exception));
+  }
 }

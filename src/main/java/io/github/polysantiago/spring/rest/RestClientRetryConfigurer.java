@@ -7,11 +7,10 @@ import org.springframework.retry.interceptor.RetryOperationsInterceptor;
 @RequiredArgsConstructor
 class RestClientRetryConfigurer {
 
-    private final RetryOperationsInterceptor retryOperationsInterceptor;
+  private final RetryOperationsInterceptor retryOperationsInterceptor;
 
-    void configure(ProxyFactory proxyFactory, RestClientInterceptor restClientInterceptor) {
-        proxyFactory.addAdvice(retryOperationsInterceptor);
-        restClientInterceptor.setRetryEnabled(true);
-    }
-
+  void configure(ProxyFactory proxyFactory, RestClientInterceptor restClientInterceptor) {
+    proxyFactory.addAdvice(retryOperationsInterceptor);
+    restClientInterceptor.setRetryEnabled(true);
+  }
 }

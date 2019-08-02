@@ -10,6 +10,5 @@ import org.springframework.hateoas.ResourceSupport;
 @RequiredArgsConstructor
 public class FooResource extends ResourceSupport {
 
-    private final String bar;
-
+  private final String bar;
 }
