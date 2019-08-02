@@ -1,221 +1,221 @@
 plugins {
-    id 'java'
-    id 'idea'
-    id 'jacoco'
-    id "io.spring.dependency-management" version "1.0.8.RELEASE"
-    id 'maven-publish'
-    id 'signing'
-    id 'nebula.optional-base' version '3.0.3'
-    id 'nebula.provided-base' version '3.0.3'
-    id "io.codearte.nexus-staging" version "0.8.0"
-    id 'net.ltgt.errorprone' version "0.8.1"
+  id 'java'
+  id 'idea'
+  id 'jacoco'
+  id "io.spring.dependency-management" version "1.0.8.RELEASE"
+  id 'maven-publish'
+  id 'signing'
+  id 'nebula.optional-base' version '3.0.3'
+  id 'nebula.provided-base' version '3.0.3'
+  id "io.codearte.nexus-staging" version "0.8.0"
+  id 'net.ltgt.errorprone' version "0.8.1"
 }
 
 ext {
-    pomFile = file("${project.buildDir}/publications/maven/pom-default.xml")
-    isReleaseVersion = !(project.version =~ /-SNAPSHOT$/)
-    ossrhUser = project.hasProperty('sonatypeUsername') ? sonatypeUsername : System.getenv('sonatypeUsername')
-    ossrhPassword = project.hasProperty('sonatypePassword') ? sonatypePassword : System.getenv('sonatypePassword')
+  pomFile = file("${project.buildDir}/publications/maven/pom-default.xml")
+  isReleaseVersion = !(project.version =~ /-SNAPSHOT$/)
+  ossrhUser = project.hasProperty('sonatypeUsername') ? sonatypeUsername : System.getenv('sonatypeUsername')
+  ossrhPassword = project.hasProperty('sonatypePassword') ? sonatypePassword : System.getenv('sonatypePassword')
 }
 
 idea {
-    project {
-        jdkName = '1.8'
-        languageLevel = '1.8'
+  project {
+    jdkName = '1.8'
+    languageLevel = '1.8'
 
-        vcs = 'Git'
-    }
+    vcs = 'Git'
+  }
 }
 
 nexusStaging {
-    username = ossrhUser
-    password = ossrhPassword
+  username = ossrhUser
+  password = ossrhPassword
 }
 
 tasks.withType(JavaCompile) {
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+  sourceCompatibility = 1.8
+  targetCompatibility = 1.8
 }
 
 repositories {
-    mavenLocal()
-    mavenCentral()
-    jcenter()
+  mavenLocal()
+  mavenCentral()
+  jcenter()
 }
 
 dependencyManagement {
-    imports {
-        mavenBom 'org.springframework.boot:spring-boot-dependencies:2.1.6.RELEASE'
-    }
+  imports {
+    mavenBom 'org.springframework.boot:spring-boot-dependencies:2.1.6.RELEASE'
+  }
 }
 
 dependencies {
-    compile("org.springframework.boot:spring-boot-autoconfigure")
-    compile("org.springframework.boot:spring-boot-starter-logging")
-    compile("org.springframework:spring-webmvc")
-    compile('org.springframework:spring-aop')
-    compile('org.aspectj:aspectjweaver')
-    annotationProcessor('org.springframework.boot:spring-boot-configuration-processor')
-    
-    compile 'org.springframework.retry:spring-retry', optional
+  compile("org.springframework.boot:spring-boot-autoconfigure")
+  compile("org.springframework.boot:spring-boot-starter-logging")
+  compile("org.springframework:spring-webmvc")
+  compile('org.springframework:spring-aop')
+  compile('org.aspectj:aspectjweaver')
+  annotationProcessor('org.springframework.boot:spring-boot-configuration-processor')
 
-    provided 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    compile 'org.apache.commons:commons-lang3:3.9'
-    compile 'net.javacrumbs.future-converter:future-converter-spring-java8:1.2.0'
+  compile 'org.springframework.retry:spring-retry', optional
 
-    errorprone("com.google.errorprone:error_prone_core:2.3.3")
-    errorprone('com.google.guava:guava:28.0-jre')
-    errorproneJavac("com.google.errorprone:javac:9+181-r4173-1")
+  provided 'org.projectlombok:lombok'
+  annotationProcessor 'org.projectlombok:lombok'
+  compile 'org.apache.commons:commons-lang3:3.9'
+  compile 'net.javacrumbs.future-converter:future-converter-spring-java8:1.2.0'
 
-    testCompile("org.springframework.boot:spring-boot-starter-test")
-    testCompile('org.springframework.boot:spring-boot-starter-hateoas')
-    testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
-    testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
-    testCompile('org.assertj:assertj-core')
-    testAnnotationProcessor("org.projectlombok:lombok")
+  errorprone("com.google.errorprone:error_prone_core:2.3.3")
+  errorprone('com.google.guava:guava:28.0-jre')
+  errorproneJavac("com.google.errorprone:javac:9+181-r4173-1")
+
+  testCompile("org.springframework.boot:spring-boot-starter-test")
+  testCompile('org.springframework.boot:spring-boot-starter-hateoas')
+  testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
+  testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
+  testCompile('org.assertj:assertj-core')
+  testAnnotationProcessor("org.projectlombok:lombok")
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.errorprone.disableWarningsInGeneratedCode = true
+  options.errorprone.disableWarningsInGeneratedCode = true
 }
 
 tasks.withType(Jar) {
-    from(project.projectDir) {
-        include 'LICENSE'
-        into 'META-INF'
-    }
+  from(project.projectDir) {
+    include 'LICENSE'
+    into 'META-INF'
+  }
 }
 
 task sourceJar(type: Jar) {
-    classifier = 'sources'
-    from sourceSets.main.allJava
+  classifier = 'sources'
+  from sourceSets.main.allJava
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
-    from javadoc.destinationDir
+  classifier = 'javadoc'
+  from javadoc.destinationDir
 }
 
 artifacts {
-    archives jar
-    archives sourceJar
-    archives javadocJar
+  archives jar
+  archives sourceJar
+  archives javadocJar
 }
 
 signing {
-    required { signatory != null && project.ext.isReleaseVersion }
-    sign configurations.archives
+  required { signatory != null && project.ext.isReleaseVersion }
+  sign configurations.archives
 }
 
 publishing {
-    repositories {
-        maven {
-            if (project.ext.isReleaseVersion) {
-                url 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+  repositories {
+    maven {
+      if (project.ext.isReleaseVersion) {
+        url 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+      } else {
+        url 'https://oss.sonatype.org/content/repositories/snapshots/'
+      }
+
+      credentials {
+        username = ossrhUser
+        password = ossrhPassword
+      }
+    }
+  }
+  publications {
+    maven(MavenPublication) {
+      pom.withXml {
+        // fix maven-publish issue when all maven dependencies are placed into runtime scope
+        asNode().dependencies.dependency.findAll() {
+          it.scope.text() == 'runtime' && project.configurations.compile.dependencies.find { dep ->
+            dep.name == it.artifactId.text()
+          }
+        }.each { it.scope*.value = 'compile' }
+
+        asNode().children().last() + {
+          resolveStrategy = DELEGATE_FIRST
+          name "${project.name}"
+          description "${project.description}"
+          url 'https://github.com/polysantiago/spring-boot-rest-client'
+          inceptionYear 2017
+          licenses {
+            license {
+              name 'MIT License'
+              url 'http://www.opensource.org/licenses/mit-license.php'
+              distribution 'repo'
+            }
+          }
+          developers {
+            developer {
+              id 'polysantiago'
+              name 'Pablo Santiago'
+              email 'pablo.santiago@gmail.com'
+              url 'https://github.com/polysantiago'
+            }
+          }
+          scm {
+            url 'https://github.com/polysantiago/spring-boot-rest-client'
+            connection 'scm:git:https://github.com/polysantiago/spring-boot-rest-client.git'
+            developerConnection 'scm:git:ssh://git@github.com:polysantiago/spring-boot-rest-client.git'
+          }
+        }
+      }
+
+      from components.java
+
+      artifact sourceJar {
+        classifier "sources"
+      }
+
+      artifact javadocJar {
+        classifier "javadoc"
+      }
+
+      // Sign the pom.xml and artifacts.
+      if (signing.required) {
+        // Sign the artifacts.
+        project.tasks.signArchives.signatureFiles.each {
+          artifact(it) {
+            def matcher = it.file =~ /-(sources|javadoc)\.jar\.asc$/
+            if (matcher.find()) {
+              classifier = matcher.group(1)
             } else {
-                url 'https://oss.sonatype.org/content/repositories/snapshots/'
+              classifier = null
             }
-
-            credentials {
-                username = ossrhUser
-                password = ossrhPassword
-            }
+            extension = 'jar.asc'
+          }
         }
+      }
     }
-    publications {
-        maven(MavenPublication) {
-            pom.withXml {
-                // fix maven-publish issue when all maven dependencies are placed into runtime scope
-                asNode().dependencies.dependency.findAll() {
-                    it.scope.text() == 'runtime' && project.configurations.compile.dependencies.find { dep ->
-                        dep.name == it.artifactId.text()
-                    }
-                }.each { it.scope*.value = 'compile' }
 
-                asNode().children().last() + {
-                    resolveStrategy = DELEGATE_FIRST
-                    name "${project.name}"
-                    description "${project.description}"
-                    url 'https://github.com/polysantiago/spring-boot-rest-client'
-                    inceptionYear 2017
-                    licenses {
-                        license {
-                            name 'MIT License'
-                            url 'http://www.opensource.org/licenses/mit-license.php'
-                            distribution 'repo'
-                        }
-                    }
-                    developers {
-                        developer {
-                            id 'polysantiago'
-                            name 'Pablo Santiago'
-                            email 'pablo.santiago@gmail.com'
-                            url 'https://github.com/polysantiago'
-                        }
-                    }
-                    scm {
-                        url 'https://github.com/polysantiago/spring-boot-rest-client'
-                        connection 'scm:git:https://github.com/polysantiago/spring-boot-rest-client.git'
-                        developerConnection 'scm:git:ssh://git@github.com:polysantiago/spring-boot-rest-client.git'
-                    }
-                }
-            }
-
-            from components.java
-
-            artifact sourceJar {
-                classifier "sources"
-            }
-
-            artifact javadocJar {
-                classifier "javadoc"
-            }
-
-            // Sign the pom.xml and artifacts.
-            if (signing.required) {
-                // Sign the artifacts.
-                project.tasks.signArchives.signatureFiles.each {
-                    artifact(it) {
-                        def matcher = it.file =~ /-(sources|javadoc)\.jar\.asc$/
-                        if (matcher.find()) {
-                            classifier = matcher.group(1)
-                        } else {
-                            classifier = null
-                        }
-                        extension = 'jar.asc'
-                    }
-                }
-            }
+    if (signing.required) {
+      gpgPom(MavenPublication) {
+        def pomAscFile = signing.sign(project.ext.pomFile).signatureFiles[0]
+        artifact(pomAscFile) {
+          classifier = null
+          extension = 'pom.asc'
         }
-
-        if (signing.required) {
-            gpgPom(MavenPublication) {
-                def pomAscFile = signing.sign(project.ext.pomFile).signatureFiles[0]
-                artifact(pomAscFile) {
-                    classifier = null
-                    extension = 'pom.asc'
-                }
-            }
-        }
+      }
     }
+  }
 }
 
 publish.dependsOn check
 
 model {
-    tasks.publishMavenPublicationToMavenLocal {
-        dependsOn(project.tasks.signArchives)
-    }
-    tasks.publishMavenPublicationToMavenRepository {
-        dependsOn(project.tasks.signArchives)
-    }
+  tasks.publishMavenPublicationToMavenLocal {
+    dependsOn(project.tasks.signArchives)
+  }
+  tasks.publishMavenPublicationToMavenRepository {
+    dependsOn(project.tasks.signArchives)
+  }
 }
 
 task install(dependsOn: publishToMavenLocal)
 
 test {
-    testLogging {
-        exceptionFormat = 'full'
-    }
+  testLogging {
+    exceptionFormat = 'full'
+  }
 }
