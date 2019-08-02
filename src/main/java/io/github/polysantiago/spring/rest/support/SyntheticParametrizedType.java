@@ -9,7 +9,7 @@ import java.util.Arrays;
 import lombok.Getter;
 import org.springframework.core.ResolvableType;
 
-@Getter
+@Getter(onMethod_ = @Override)
 public final class SyntheticParametrizedType implements ParameterizedType, Serializable {
 
   private static final long serialVersionUID = -521679299810654826L;

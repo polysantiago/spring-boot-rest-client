@@ -2,12 +2,13 @@ plugins {
     id 'java'
     id 'idea'
     id 'jacoco'
-    id "io.spring.dependency-management" version "1.0.7.RELEASE"
+    id "io.spring.dependency-management" version "1.0.8.RELEASE"
     id 'maven-publish'
     id 'signing'
     id 'nebula.optional-base' version '3.0.3'
     id 'nebula.provided-base' version '3.0.3'
     id "io.codearte.nexus-staging" version "0.8.0"
+    id 'net.ltgt.errorprone' version "0.8.1"
 }
 
 ext {
@@ -63,12 +64,20 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.9'
     compile 'net.javacrumbs.future-converter:future-converter-spring-java8:1.2.0'
 
+    errorprone("com.google.errorprone:error_prone_core:2.3.3")
+    errorprone('com.google.guava:guava:28.0-jre')
+    errorproneJavac("com.google.errorprone:javac:9+181-r4173-1")
+
     testCompile("org.springframework.boot:spring-boot-starter-test")
     testCompile('org.springframework.boot:spring-boot-starter-hateoas')
     testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
     testCompile('org.assertj:assertj-core')
     testAnnotationProcessor("org.projectlombok:lombok")
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.errorprone.disableWarningsInGeneratedCode = true
 }
 
 tasks.withType(Jar) {

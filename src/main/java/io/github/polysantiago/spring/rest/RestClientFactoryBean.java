@@ -32,8 +32,10 @@ class RestClientFactoryBean<T>
 
   private String url;
 
-  @Getter private Class<T> objectType;
+  @Getter(onMethod_ = @Override)
+  private Class<T> objectType;
 
+  @Setter(onMethod_ = @Override)
   private ApplicationContext applicationContext;
 
   @Override

@@ -42,7 +42,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
-@Setter
+@Setter(onMethod_ = @Override)
 class RestClientsRegistrar
     implements ImportBeanDefinitionRegistrar, ResourceLoaderAware, BeanClassLoaderAware {
 

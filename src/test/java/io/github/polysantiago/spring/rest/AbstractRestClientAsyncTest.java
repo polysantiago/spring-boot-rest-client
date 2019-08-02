@@ -309,7 +309,7 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     responseHeaders.add("someHeader", "someHeaderValue");
     asyncServer
         .expect(requestTo("http://localhost/"))
-        .andExpect((method(HttpMethod.GET)))
+        .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
 
     ResponseEntity<String> responseEntity = getResponse(fooClient.getEntity());
@@ -326,7 +326,7 @@ public abstract class AbstractRestClientAsyncTest<T extends AsyncFooClient> {
     responseHeaders.add("someHeader", "someHeaderValue");
     asyncServer
         .expect(requestTo("http://localhost/"))
-        .andExpect((method(HttpMethod.GET)))
+        .andExpect(method(HttpMethod.GET))
         .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
 
     HttpEntity<String> responseEntity = getResponse(fooClient.getHttpEntity());

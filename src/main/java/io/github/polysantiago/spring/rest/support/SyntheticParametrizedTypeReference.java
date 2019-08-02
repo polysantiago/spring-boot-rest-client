@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.ResolvableType;
 
-@Getter
+@Getter(onMethod_ = @Override)
 @EqualsAndHashCode(callSuper = false)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class SyntheticParametrizedTypeReference<T> extends ParameterizedTypeReference<T> {

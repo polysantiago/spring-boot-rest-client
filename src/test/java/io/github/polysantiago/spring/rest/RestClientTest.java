@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -251,7 +252,7 @@ public class RestClientTest {
 
   @Test
   public void testRestClientSerializeRequestParam() {
-    LocalDate today = LocalDate.now();
+    LocalDate today = LocalDate.now(ZoneId.systemDefault());
     Foo foo = new Foo("bar");
 
     String uri =
