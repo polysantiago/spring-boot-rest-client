@@ -51,7 +51,6 @@ dependencyManagement {
 dependencies {
     compile("org.springframework.boot:spring-boot-autoconfigure")
     compile("org.springframework.boot:spring-boot-starter-logging")
-    compileOnly('org.springframework.boot:spring-boot-configuration-processor')
     compile("org.springframework:spring-webmvc")
     compile('org.springframework:spring-aop')
     compile('org.aspectj:aspectjweaver')
@@ -61,14 +60,14 @@ dependencies {
 
     provided 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-    compile 'org.apache.commons:commons-lang3:3.5'
-    compile 'net.javacrumbs.future-converter:future-converter-spring-java8:1.1.0'
+    compile 'org.apache.commons:commons-lang3:3.9'
+    compile 'net.javacrumbs.future-converter:future-converter-spring-java8:1.2.0'
 
     testCompile("org.springframework.boot:spring-boot-starter-test")
     testCompile('org.springframework.boot:spring-boot-starter-hateoas')
     testCompile("com.fasterxml.jackson.datatype:jackson-datatype-jdk8")
     testCompile("com.fasterxml.jackson.dataformat:jackson-dataformat-yaml")
-    testCompile('org.assertj:assertj-core:3.6.2')
+    testCompile('org.assertj:assertj-core')
     testAnnotationProcessor("org.projectlombok:lombok")
 }
 
