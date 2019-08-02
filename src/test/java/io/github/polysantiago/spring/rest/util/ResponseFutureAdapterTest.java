@@ -1,17 +1,17 @@
 package io.github.polysantiago.spring.rest.util;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.util.concurrent.SettableListenableFuture;
-
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ResponseFutureAdapterTest {

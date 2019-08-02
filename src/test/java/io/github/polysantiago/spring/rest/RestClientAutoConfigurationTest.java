@@ -1,8 +1,9 @@
 package io.github.polysantiago.spring.rest;
 
-import org.junit.Rule;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoUniqueBeanDefinitionException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -12,12 +13,7 @@ import org.springframework.format.support.DefaultFormattingConversionService;
 import org.springframework.format.support.FormattingConversionService;
 import org.springframework.web.bind.annotation.GetMapping;
 
-import static org.hamcrest.core.IsInstanceOf.instanceOf;
-
 public class RestClientAutoConfigurationTest {
-
-    @Rule
-    public ExpectedException thrown = ExpectedException.none();
 
     @Test
     public void testInjectConversionServiceSingleCandidate() {
@@ -38,8 +34,9 @@ public class RestClientAutoConfigurationTest {
 
     @Test
     public void testInjectConversionMultipleCandidates() {
-        thrown.expectCause(instanceOf(NoUniqueBeanDefinitionException.class));
-        new AnnotationConfigApplicationContext(MultipleCandidatesConfiguration.class).getBean(TestClient.class);
+        assertThatExceptionOfType(BeanCreationException.class)
+            .isThrownBy(() -> new AnnotationConfigApplicationContext(MultipleCandidatesConfiguration.class).getBean(TestClient.class))
+            .withCauseExactlyInstanceOf(NoUniqueBeanDefinitionException.class);
     }
 
     @Configuration

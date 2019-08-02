@@ -1,5 +1,14 @@
 package io.github.polysantiago.spring.rest;
 
+import static org.springframework.test.web.client.MockRestServiceServer.bindTo;
+import static org.springframework.test.web.client.MockRestServiceServer.createServer;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
+import java.io.IOException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,14 +28,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
-
-import java.io.IOException;
-
-import static org.springframework.test.web.client.MockRestServiceServer.bindTo;
-import static org.springframework.test.web.client.MockRestServiceServer.createServer;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
@@ -61,17 +62,17 @@ public class RestClientRetryTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         server = createServer(restTemplate);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         server.verify();
     }
 
     @Test
-    public void testRetry() throws Exception {
+    public void testRetry() {
         server.expect(requestTo(defaultUrl()))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
@@ -84,7 +85,7 @@ public class RestClientRetryTest {
     }
 
     @Test(expected = HttpServerErrorException.class)
-    public void testShouldNotRetry() throws Exception {
+    public void testShouldNotRetry() {
         server.expect(requestTo(defaultUrl()))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withServerError());
@@ -93,7 +94,7 @@ public class RestClientRetryTest {
     }
 
     @Test
-    public void testShouldRetryOnIoException() throws Exception {
+    public void testShouldRetryOnIoException() {
         // This is a workaround needed because of a glitch in SimpleRequestExpectationManager.
         // If using SimpleRequestExpectationManager, afterExpectationsDeclared() fails due to the request not properly
         // being registered as the response throws an Exception.
@@ -113,7 +114,7 @@ public class RestClientRetryTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void testShouldNotRetryOnOtherExceptions() throws Exception {
+    public void testShouldNotRetryOnOtherExceptions() {
         server.expect(requestTo(defaultUrl()))
             .andExpect(method(HttpMethod.GET))
             .andRespond(request -> {

@@ -1,25 +1,22 @@
 package io.github.polysantiago.spring.rest;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.assertj.core.api.Assertions;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.http.*;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.client.MockRestServiceServer;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang3.StringUtils.toEncodedString;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.springframework.test.web.client.MockRestServiceServer.createServer;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withCreatedEntity;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withServerError;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.time.LocalDate;
@@ -29,15 +26,36 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
-
-import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.StringUtils.toEncodedString;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Fail.fail;
-import static org.springframework.test.web.client.MockRestServiceServer.createServer;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
@@ -167,12 +185,12 @@ public class RestClientTest {
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         server = createServer(restTemplate);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         server.verify();
     }
 
@@ -190,7 +208,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientDefaultMapping() throws Exception {
+    public void testRestClientDefaultMapping() {
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess("success", MediaType.TEXT_PLAIN));
@@ -201,7 +219,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientGet() throws Exception {
+    public void testRestClientGet() {
         server.expect(requestTo("http://localhost/some-id?query=some-query"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess());
@@ -219,8 +237,7 @@ public class RestClientTest {
 
         Foo response = fooClient.getFoo("some-id");
 
-        assertThat(response).isNotNull();
-        assertThat(response.getBar()).isEqualTo("bar");
+        assertThat(response).extracting(Foo::getBar).isEqualTo("bar");
     }
 
     @Test
@@ -235,13 +252,11 @@ public class RestClientTest {
 
         List<Foo> fooList = fooClient.fooList();
 
-        Assertions.assertThat(fooList).hasSize(2);
-        assertThat(fooList.get(0).getBar()).isEqualTo("bar0");
-        assertThat(fooList.get(1).getBar()).isEqualTo("bar1");
+        assertThat(fooList).extracting(Foo::getBar).containsExactly("bar0", "bar1");
     }
 
     @Test
-    public void testRestClientListAsParam() throws Exception {
+    public void testRestClientListAsParam() {
         List<String> params = Stream.of("abc", "cba").collect(toList());
 
         server.expect(requestTo("http://localhost/fooListParams?myList=abc&myList=cba"))
@@ -261,27 +276,22 @@ public class RestClientTest {
 
         Foo[] fooArray = fooClient.fooArray();
 
-        Assertions.assertThat(fooArray).hasSize(2);
-        assertThat(fooArray[0].getBar()).isEqualTo("bar0");
-        assertThat(fooArray[1].getBar()).isEqualTo("bar1");
+        assertThat(fooArray).extracting(Foo::getBar).containsExactly("bar0", "bar1");
     }
 
     @Test
-    public void testRestClientGetObjectWithNoContentShouldReturnNull() throws Exception {
+    public void testRestClientGetObjectWithNoContentShouldReturnNull() {
         server.expect(requestTo("http://localhost/fooObject"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
-        try {
-            fooClient.fooObject();
-            fail("Should get NOT FOUND");
-        } catch (HttpClientErrorException exception) {
-            assertThat(exception.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        }
+        assertThatExceptionOfType(HttpClientErrorException.class)
+            .isThrownBy(fooClient::fooObject)
+            .satisfies(ex -> assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND));
     }
 
     @Test
-    public void testRestClientGetAcceptHeader() throws Exception {
+    public void testRestClientGetAcceptHeader() {
         server.expect(requestTo("http://localhost/some-id"))
             .andExpect(method(HttpMethod.GET))
             .andExpect(header(HttpHeaders.ACCEPT, "application/json"))
@@ -291,7 +301,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientGetAcceptAtom() throws Exception {
+    public void testRestClientGetAcceptAtom() {
         server.expect(requestTo("http://localhost/some-id"))
             .andExpect(method(HttpMethod.GET))
             .andExpect(header(HttpHeaders.ACCEPT, "application/atom+xml"))
@@ -301,7 +311,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientPost() throws Exception {
+    public void testRestClientPost() {
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.POST))
             .andRespond(withCreatedEntity(URI.create("http://some-url")));
@@ -310,7 +320,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientPostForLocation() throws Exception {
+    public void testRestClientPostForLocation() {
         URI location = URI.create("http://some-url");
         server.expect(requestTo("http://localhost/postForLocation"))
             .andExpect(method(HttpMethod.POST))
@@ -320,7 +330,7 @@ public class RestClientTest {
     }
 
     @Test(expected = HttpServerErrorException.class)
-    public void testRestClientPostForLocationFailure() throws Exception {
+    public void testRestClientPostForLocationFailure() {
         server.expect(requestTo("http://localhost/postForLocation"))
             .andExpect(method(HttpMethod.POST))
             .andRespond(withServerError());
@@ -329,7 +339,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientPostWithContentType() throws Exception {
+    public void testRestClientPostWithContentType() {
         Foo foo = new Foo("bar");
 
         server.expect(requestTo("http://localhost/"))
@@ -341,7 +351,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientSerializeRequestParam() throws Exception {
+    public void testRestClientSerializeRequestParam() {
         LocalDate today = LocalDate.now();
         Foo foo = new Foo("bar");
 
@@ -359,7 +369,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientPut() throws Exception {
+    public void testRestClientPut() {
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.PUT))
             .andRespond(withSuccess());
@@ -368,7 +378,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientPatch() throws Exception {
+    public void testRestClientPatch() {
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.PATCH))
             .andRespond(withSuccess());
@@ -377,7 +387,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientDelete() throws Exception {
+    public void testRestClientDelete() {
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.DELETE))
             .andRespond(withSuccess());
@@ -386,7 +396,7 @@ public class RestClientTest {
     }
 
     @Test(expected = HttpServerErrorException.class)
-    public void testRestClientDoesNotRetryIfNotEnabled() throws Exception {
+    public void testRestClientDoesNotRetryIfNotEnabled() {
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
@@ -395,18 +405,18 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientWithNonEmptyOptional() throws Exception {
+    public void testRestClientWithNonEmptyOptional() throws JsonProcessingException {
         Foo foo = new Foo("bar");
 
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(objectMapper.writeValueAsBytes(foo), MediaType.APPLICATION_JSON));
 
-        Assertions.assertThat(fooClient.tryNonEmptyOptional()).hasValue(foo);
+        assertThat(fooClient.tryNonEmptyOptional()).hasValue(foo);
     }
 
     @Test
-    public void testRestClientWithEmptyOptional() throws Exception {
+    public void testRestClientWithEmptyOptional() {
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.GET))
             .andRespond(withStatus(HttpStatus.NOT_FOUND));
@@ -415,10 +425,10 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientWithRawData() throws Exception {
+    public void testRestClientWithRawData() {
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.GET))
-            .andRespond(withSuccess("success".getBytes(), MediaType.APPLICATION_OCTET_STREAM));
+            .andRespond(withSuccess("success".getBytes(Charset.defaultCharset()), MediaType.APPLICATION_OCTET_STREAM));
 
         byte[] raw = fooClient.raw();
 
@@ -426,7 +436,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testRestClientWithHeaders() throws Exception {
+    public void testRestClientWithHeaders() {
         server.expect(requestTo("http://localhost/"))
             .andExpect(method(HttpMethod.GET))
             .andExpect(header("Some-Header", "some-value"))
@@ -438,12 +448,12 @@ public class RestClientTest {
     }
 
     @Test
-    public void testGetEntity() throws Exception {
+    public void testGetEntity() {
         String responseString = "RESPSONSE!^$";
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.add("someHeader", "someHeaderValue");
         server.expect(requestTo("http://localhost/"))
-            .andExpect((method(HttpMethod.GET)))
+            .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
 
         ResponseEntity<String> responseEntity = fooClient.getEntity();
@@ -453,22 +463,22 @@ public class RestClientTest {
     }
 
     @Test(expected = HttpServerErrorException.class)
-    public void testGetEntityFailure() throws Exception {
+    public void testGetEntityFailure() {
         String responseString = "ERROR";
         server.expect(requestTo("http://localhost/"))
-            .andExpect((method(HttpMethod.GET)))
+            .andExpect(method(HttpMethod.GET))
             .andRespond(withServerError().body(responseString));
 
         fooClient.getEntity();
     }
 
     @Test
-    public void testGetHttpEntity() throws Exception {
+    public void testGetHttpEntity() {
         String responseString = "RESPSONSE!^$";
         HttpHeaders responseHeaders = new HttpHeaders();
         responseHeaders.add("someHeader", "someHeaderValue");
         server.expect(requestTo("http://localhost/"))
-            .andExpect((method(HttpMethod.GET)))
+            .andExpect(method(HttpMethod.GET))
             .andRespond(withSuccess(responseString, MediaType.TEXT_PLAIN).headers(responseHeaders));
 
         HttpEntity<String> responseEntity = fooClient.getHttpEntity();
@@ -477,7 +487,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testGetWithMixedParameters() throws Exception {
+    public void testGetWithMixedParameters() {
         UUID flowId = UUID.randomUUID();
         String id = "THeId";
         String response = "TheResponse";
@@ -490,7 +500,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testPostWithMixedParametersAndBody() throws Exception {
+    public void testPostWithMixedParametersAndBody() {
         UUID flowId = UUID.randomUUID();
         String id = "THeId";
         String body = "BIDY";
@@ -505,7 +515,7 @@ public class RestClientTest {
     }
 
     @Test
-    public void testPostWithMixedParametersAndAnnotatedBody() throws Exception {
+    public void testPostWithMixedParametersAndAnnotatedBody() {
         UUID flowId = UUID.randomUUID();
         String id = "THeId";
         String body = "BIDY";

@@ -1,5 +1,7 @@
 package io.github.polysantiago.spring.rest;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import io.github.polysantiago.spring.rest.retry.BackOffSettings;
 import io.github.polysantiago.spring.rest.retry.RetrySettings;
 import org.junit.After;
@@ -10,28 +12,26 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 public class RestClientPropertiesTest {
 
     private AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (this.context != null) {
             this.context.close();
         }
     }
 
     @Test
-    public void testDefaultProperties() throws Exception {
+    public void testDefaultProperties() {
         registerAndRefresh();
 
         assertProperties(getProperties(), 3, 1000L, 0L, 0.0d, false);
     }
 
     @Test
-    public void testMaxAttempts() throws Exception {
+    public void testMaxAttempts() {
         TestPropertyValues.of("spring.rest.client.retry.max-attempts:5").applyTo(this.context);
 
         registerAndRefresh();

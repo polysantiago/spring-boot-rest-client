@@ -1,6 +1,15 @@
 package io.github.polysantiago.spring.rest;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.client.MockRestServiceServer.createServer;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
 import com.fasterxml.jackson.databind.Module;
+import java.util.Optional;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,9 +21,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedResources;
+import org.springframework.hateoas.PagedResources.PageMetadata;
+import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
 import org.springframework.hateoas.config.EnableHypermediaSupport;
 import org.springframework.hateoas.hal.Jackson2HalModule;
@@ -29,14 +39,6 @@ import org.springframework.util.PropertyPlaceholderHelper;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.client.RestTemplate;
-
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.client.MockRestServiceServer.createServer;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
-import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 @ActiveProfiles("test")
 @RunWith(SpringRunner.class)
@@ -68,7 +70,7 @@ public class RestClientHateoasTest {
         FooResource getFoo(@PathVariable("id") String id);
 
         @GetMapping(value = SINGLE_RESOURCE, produces = MediaTypes.HAL_JSON_VALUE)
-        org.springframework.hateoas.Resource<Foo> getFooWrapped(@PathVariable("id") String id);
+        Resource<Foo> getFooWrapped(@PathVariable("id") String id);
 
         @GetMapping(value = COLLECTION_RESOURCE, produces = MediaTypes.HAL_JSON_VALUE)
         Resources<FooResource> getFoos();
@@ -101,17 +103,17 @@ public class RestClientHateoasTest {
     private MockRestServiceServer server;
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         server = createServer(restTemplate);
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         server.verify();
     }
 
     @Test
-    public void testSingleResource() throws Exception {
+    public void testSingleResource() {
         String endpoint = helper.replacePlaceholders(SINGLE_RESOURCE, s -> "1234");
 
         mockServerHalResponse(endpoint, fooResourceJson);
@@ -125,33 +127,31 @@ public class RestClientHateoasTest {
     }
 
     @Test
-    public void testSingleResourceWrapped() throws Exception {
+    public void testSingleResourceWrapped() {
         String endpoint = helper.replacePlaceholders(SINGLE_RESOURCE, s -> "1234");
 
         mockServerHalResponse(endpoint, fooResourceJson);
 
-        org.springframework.hateoas.Resource<Foo> resource = barClient.getFooWrapped("1234");
+        Resource<Foo> resource = barClient.getFooWrapped("1234");
 
         assertThat(resource).isNotNull();
         assertThat(resource.getId()).isNotNull();
         assertThat(resource.getLink("foo").getHref()).isNotEmpty();
-        assertThat(resource.getContent()).isNotNull();
-        assertThat(resource.getContent().getBar()).isEqualTo("some-value");
+        assertThat(resource.getContent()).extracting(Foo::getBar).isEqualTo("some-value");
     }
 
     @Test
-    public void testCollectionResource() throws Exception {
+    public void testCollectionResource() {
         mockServerHalResponse(COLLECTION_RESOURCE, fooResourcesJson);
 
         Resources<FooResource> foos = barClient.getFoos();
 
         assertThat(foos.getId()).isNotNull();
-        assertThat(foos.getContent()).isNotEmpty();
         assertThat(foos.getContent()).containsExactly(new FooResource("some-value"));
     }
 
     @Test
-    public void testOptionalCollectionResource_notFound() throws Exception {
+    public void testOptionalCollectionResource_notFound() {
         mockServerHalResponse(OPTIONAL_COLLECTION_RESOURCE)
             .andRespond(withStatus(HttpStatus.NOT_FOUND));
 
@@ -161,13 +161,11 @@ public class RestClientHateoasTest {
     }
 
     @Test
-    public void testOptionalCollectionResource_found() throws Exception {
+    public void testOptionalCollectionResource_found() {
         mockServerHalResponse(OPTIONAL_COLLECTION_RESOURCE, fooResourcesJson);
 
         Optional<Resources<FooResource>> optionalFoos = barClient.getOptionalFoos();
 
-        assertThat(optionalFoos).isPresent();
-        assertThat(optionalFoos).hasValueSatisfying(resources -> assertThat(resources).isNotEmpty());
         assertThat(optionalFoos)
             .hasValueSatisfying(resources -> assertThat(resources)
                 .first()
@@ -175,18 +173,17 @@ public class RestClientHateoasTest {
     }
 
     @Test
-    public void testPagedCollectionResource() throws Exception {
+    public void testPagedCollectionResource() {
         mockServerHalResponse(PAGED_RESOURCE, fooPagedResourcesJson);
 
         PagedResources<FooResource> pagedFoos = barClient.getPagedFoos();
 
         assertThat(pagedFoos).isNotEmpty();
         assertThat(pagedFoos.getContent()).isNotEmpty();
-        assertThat(pagedFoos.getMetadata()).isNotNull();
-        assertThat(pagedFoos.getMetadata().getTotalElements()).isEqualTo(1);
+        assertThat(pagedFoos.getMetadata()).extracting(PageMetadata::getTotalElements).isEqualTo(1L);
     }
 
-    private void mockServerHalResponse(String endpoint, Resource reply) {
+    private void mockServerHalResponse(String endpoint, org.springframework.core.io.Resource reply) {
         mockServerHalResponse(endpoint)
             .andRespond(withSuccess(reply, MediaTypes.HAL_JSON));
     }

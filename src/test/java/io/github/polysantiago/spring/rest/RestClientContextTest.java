@@ -38,7 +38,7 @@ public class RestClientContextTest {
     }
 
     @Test
-    public void testContextLoads() throws Exception {
+    public void testContextLoads() {
 
     }
 }
